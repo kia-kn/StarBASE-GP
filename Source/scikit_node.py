@@ -9,10 +9,10 @@
 from abc import ABC, abstractmethod
 from sklearn.base import BaseEstimator, TransformerMixin, RegressorMixin
 import numpy as np
-from sklearn.feature_selection import VarianceThreshold, SelectPercentile, SelectFwe, SelectFromModel, SequentialFeatureSelector, f_regression
-from sklearn.linear_model import LinearRegression, ElasticNet, SGDRegressor, Lasso
+from sklearn.feature_selection import VarianceThreshold, SelectPercentile, SelectFwe, SelectFromModel, SequentialFeatureSelector, f_regression, f_classif
+from sklearn.linear_model import LinearRegression, ElasticNet, SGDRegressor, Lasso, LogisticRegression
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, ExtraTreesRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, ExtraTreesRegressor, ExtraTreesClassifier
 from sklearn.svm import SVR
 from typeguard import typechecked
 from typing import Dict
@@ -160,6 +160,57 @@ class SelectPercentileNode(ScikitNode, TransformerMixin):
     def get_feature_count(self):
         return self.selector.get_support().sum()
 
+# select percentile CLASSIFICATION
+# -> Change score_func from f_regression to f_classif
+class SelectPercentileNodeClassification(ScikitNode, TransformerMixin):
+    def __init__(self,
+                 rng_: rng_t,
+                 params: Dict = {},
+                 name: name_t = name_t('SelectPercentileClassification')):
+        super().__init__(name)
+        rng = np.random.default_rng(rng_)
+
+        # if params is an empty dictionary, then we will initialize the params
+        if params == {}:
+            self.params = {'percentile': np.int8(rng.integers(low=50, high=100)), 'score_func': f_classif}
+        else:
+            # make sure params is correct
+            assert 'percentile' in params
+            assert 'score_func' in params
+            assert len(params) == 2
+            assert isinstance(params['percentile'], np.int8)
+            assert isinstance(params['score_func'], np.ufunc)
+            self.params = params
+
+        self.selector = SelectPercentile(score_func=self.params['score_func'], percentile=self.params['percentile'])
+
+    def fit(self, X, y):
+        self.selector.fit(X, y)
+
+    def transform(self, X):
+        return self.selector.transform(X)
+
+    def mutate(self, rng_: rng_t):
+        rng = np.random.default_rng(rng_)
+
+        # maginitude by which we are shfiting the percentile
+        shift = np.int8(rng.integers(low=-5, high=5, endpoint=True))
+
+        # check if the percentile is going to be less than 1
+        if self.params['percentile'] + shift < np.int8(1):
+            self.params['percentile'] = np.int8(1)
+        # check if the percentile is going to be greater than 100
+        elif self.params['percentile'] + shift > np.int8(100):
+            self.params['percentile'] = np.int8(100)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['percentile'] = self.params['percentile'] + shift
+
+        self.selector = SelectPercentile(score_func=self.params['score_func'], percentile=self.params['percentile'])
+
+    def get_feature_count(self):
+        return self.selector.get_support().sum()
+
 # select fwe
 class SelectFweNode(ScikitNode, TransformerMixin):
     def __init__(self,
@@ -172,6 +223,58 @@ class SelectFweNode(ScikitNode, TransformerMixin):
         # if params is an empty dictionary, then we will initialize the params
         if params == {}:
             self.params = {'alpha': np.float32(rng.uniform(low=1e-4, high=0.05)), 'score_func': f_regression}
+        else:
+            # make sure params is correct
+            assert 'alpha' in params
+            assert 'score_func' in params
+            assert len(params) == 2
+            assert isinstance(params['alpha'], np.float32)
+            assert isinstance(params['score_func'], np.ufunc)
+            self.params = params
+
+        self.selector = SelectFwe(score_func=self.params['score_func'], alpha=self.params['alpha'])
+
+    def fit(self, X, y):
+        self.selector.fit(X, y)
+
+    def transform(self, X):
+        return self.selector.transform(X)
+
+    def mutate(self, rng_: rng_t):
+        rng = np.random.default_rng(rng_)
+
+        # get a random number from a normal distribution
+        shift = np.float32(rng.normal(loc=0.0, scale=0.005))
+
+        # check if the alpha is going to be negative
+        if self.params['alpha'] + shift < np.float32(0.0001):
+            self.params['alpha'] = np.float32(0.0001)
+        # check if the alpha is going to be greater than .99
+        elif self.params['alpha'] + shift > np.float32(0.99):
+            self.params['alpha'] = np.float32(0.99)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['alpha'] = self.params['alpha'] + shift
+
+        # new selector configuration
+        self.selector = SelectFwe(score_func=self.params['score_func'], alpha=self.params['alpha'])
+
+    def get_feature_count(self):
+        return self.selector.get_support().sum()
+
+# select fwe CLASSIFICATION
+# -> Change score_func from f_regression to f_classif
+class SelectFweNodeClassification(ScikitNode, TransformerMixin):
+    def __init__(self,
+                 rng_: rng_t,
+                 params: Dict = {},
+                 name: name_t = name_t('SelectFweClassification')):
+        super().__init__(name)
+        rng = np.random.default_rng(rng_)
+
+        # if params is an empty dictionary, then we will initialize the params
+        if params == {}:
+            self.params = {'alpha': np.float32(rng.uniform(low=1e-4, high=0.05)), 'score_func': f_classif}
         else:
             # make sure params is correct
             assert 'alpha' in params
@@ -252,6 +355,49 @@ class SelectFromModelLasso(ScikitNode, TransformerMixin):
     def get_feature_count(self,):
         return self.selector.get_support().sum()
 
+# select from model using L1-based feature selection
+# CLASSIFICATION VERSION: change to Logistic Regression with L1 penalty
+class SelectFromModelLogisticL1(ScikitNode, TransformerMixin):
+    def __init__(self,
+                 rng_: rng_t,
+                 seed: int = -1,
+                 params: Dict = {},
+                 name: name_t = name_t('SelectFromLogisticL1')):
+        super().__init__(name)
+        rng = np.random.default_rng(rng_)
+
+        # if params is an empty dictionary, then we will initialize the params
+        # solver=saga better for large datasets, but this requires feature scaling
+        if params == {}:
+            self.params = {'estimator': LogisticRegression(penalty='l1', solver='liblinear', random_state=seed), 'threshold': rng.choice([name_t('mean'), name_t('median')])}
+        else:
+            # make sure params is correct
+            assert 'estimator' in params
+            assert 'threshold' in params
+            assert len(params) == 2
+            assert isinstance(params['estimator'], LogisticRegression)
+            assert isinstance(params['threshold'], np.str_)
+            self.params = params
+
+        self.selector = SelectFromModel(estimator = self.params['estimator'], threshold=self.params['threshold'])
+
+    def fit(self, X, y):
+        self.selector.fit(X, y)
+
+    def transform(self, X):
+        return self.selector.transform(X)
+
+    def mutate(self, rng_):
+        rng = np.random.default_rng(rng_)
+
+        # randomly select threshold
+        self.params['threshold'] = rng.choice([name_t('mean'), name_t('median')])
+        # new selector configuration
+        self.selector = SelectFromModel(estimator = self.params['estimator'], threshold=self.params['threshold'])
+
+    def get_feature_count(self,):
+        return self.selector.get_support().sum()
+
 # select from model using tree-based feature selection (model is ExtraTreesRegressor)
 class SelectFromModelTree(ScikitNode, TransformerMixin):
     def __init__(self,
@@ -271,6 +417,47 @@ class SelectFromModelTree(ScikitNode, TransformerMixin):
             assert 'threshold' in params
             assert len(params) == 2
             assert isinstance(params['estimator'], ExtraTreesRegressor)
+            assert isinstance(params['threshold'], np.str_)
+            self.params = params
+
+        self.selector = SelectFromModel(estimator = self.params['estimator'], threshold=self.params['threshold'])
+
+    def fit(self, X, y):
+        self.selector.fit(X, y)
+
+    def transform(self, X):
+        return self.selector.transform(X)
+
+    def mutate(self, rng_):
+        rng = np.random.default_rng(rng_)
+        # randomly select threshold
+        self.params['threshold'] = rng.choice([name_t('mean'), name_t('median')])
+        # new selector configuration
+        self.selector = SelectFromModel(estimator = self.params['estimator'], threshold=self.params['threshold'])
+
+    def get_feature_count(self):
+        return self.selector.get_support().sum()
+
+# CLASSIFICATION VERSION:
+# select from model using tree-based feature selection (model is ExtraTreesClassifier)
+class SelectFromModelTreeClassification(ScikitNode, TransformerMixin):
+    def __init__(self,
+                 rng_: rng_t,
+                 seed: int = -1,
+                 params: Dict = {},
+                 name: name_t = name_t('SelectFromExtraTreesClassification')):
+        super().__init__(name)
+        rng = np.random.default_rng(rng_)
+
+        # if params is an empty dictionary, then we will initialize the params
+        if params == {}:
+            self.params = {'estimator': ExtraTreesClassifier(random_state=seed), 'threshold': rng.choice([name_t('mean'), name_t('median')])}
+        else:
+            # make sure params is correct
+            assert 'estimator' in params
+            assert 'threshold' in params
+            assert len(params) == 2
+            assert isinstance(params['estimator'], ExtraTreesClassifier)
             assert isinstance(params['threshold'], np.str_)
             self.params = params
 

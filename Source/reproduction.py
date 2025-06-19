@@ -77,6 +77,8 @@ class Reproduction:
                                     FeatureEncodingFrequencySelector(rng_=rng),
                                 ])
         # randomly select root node
+        # add a boolean flag within evolver.py
+        # if statement: if regression use these nodes, if classification these nodes
         root_node = rng.choice([LinearRegressionNode(rng_=rng),
                                 RandomForestRegressorNode(rng_=rng, seed=seed),
                                 SGDRegressorNode(rng_=rng, seed=seed),
