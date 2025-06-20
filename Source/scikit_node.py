@@ -7,13 +7,13 @@
 #####################################################################################################
 
 from abc import ABC, abstractmethod
-from sklearn.base import BaseEstimator, TransformerMixin, RegressorMixin
+from sklearn.base import BaseEstimator, TransformerMixin, RegressorMixin, ClassifierMixin
 import numpy as np
 from sklearn.feature_selection import VarianceThreshold, SelectPercentile, SelectFwe, SelectFromModel, SequentialFeatureSelector, f_regression, f_classif
-from sklearn.linear_model import LinearRegression, ElasticNet, SGDRegressor, Lasso, LogisticRegression
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, ExtraTreesRegressor, ExtraTreesClassifier
-from sklearn.svm import SVR
+from sklearn.linear_model import LinearRegression, ElasticNet, SGDRegressor, Lasso, LogisticRegression, SGDClassifier
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, ExtraTreesRegressor, ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
+from sklearn.svm import SVR, SVC
 from typeguard import typechecked
 from typing import Dict
 import pandas as pd
@@ -530,6 +530,58 @@ class SequentialFeatureSelectorNode(ScikitNode, TransformerMixin):
     def get_feature_count(self):
         return self.selector.get_support().sum()
 
+# CLASSIFICATION VERSION:
+# sequential feature selector, model = RandomForestClassifier
+class SequentialFeatureSelectorNode(ScikitNode, TransformerMixin):
+    def __init__(self,
+                 rng_: rng_t,
+                 seed: int = -1,
+                 params: Dict = {},
+                 name: name_t = name_t('SequentialFeatureSelectorRFClassification')):
+        super().__init__(name)
+        rng = np.random.default_rng(rng_)
+
+        # if params is an empty dictionary, then we will initialize the params
+        if params == {}:
+            self.params = {'estimator': RandomForestClassifier(random_state=seed), 'tol': np.float32(rng.uniform(low=1e-5, high=0.5))}
+        else:
+            assert 'estimator' in params
+            assert 'tol' in params
+            assert len(params) == 2
+            assert isinstance(params['estimator'], RandomForestClassifier)
+            assert isinstance(params['tol'], np.float32)
+            self.params = params
+
+        self.selector = SequentialFeatureSelector(estimator=self.params['estimator'], tol=self.params['tol'], cv=5)
+
+    def fit(self, X, y):
+        self.selector.fit(X, y)
+
+    def transform(self, X):
+        return self.selector.transform(X)
+
+    def mutate(self, rng_):
+        rng = np.random.default_rng(rng_)
+
+        # get a random number from a normal distribution
+        shift = np.float32(rng.normal(loc=0.0, scale=0.05))
+
+        # check if the tol is going to be less than 1e-5
+        if self.params['tol'] + shift < np.float32(1e-5):
+            self.params['tol'] = np.float32(1e-5)
+        # check if the tol is going to be greater than 0.5
+        elif self.params['tol'] + shift > np.float32(0.5):
+            self.params['tol'] = np.float32(0.5)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['tol'] = self.params['tol'] + shift
+
+        # new selector configuration
+        self.selector = SequentialFeatureSelector(estimator=self.params['estimator'], tol=self.params['tol'], cv=5)
+
+    def get_feature_count(self):
+        return self.selector.get_support().sum()
+
 # custom feature selector based on feature encoding frequency
 class FeatureEncodingFrequencySelector(ScikitNode, TransformerMixin):
     """Feature selector based on Encoding Frequency. Encoding frequency is the frequency of each unique element(0/1/2/3) present in a feature set.
@@ -684,6 +736,46 @@ class LinearRegressionNode(ScikitNode, RegressorMixin):
         # new regressor configuration
         self.regressor = LinearRegression(fit_intercept=self.params['fit_intercept'])
 
+# CLASSIFICATION VERSION:
+# Logistic regression
+class LogisticRegressionNode(ScikitNode, ClassifierMixin):
+    def __init__(self,
+                 rng_: rng_t,
+                 params: Dict = {},
+                 name: name_t = name_t('LogisticRegression')):
+        super().__init__(name)
+        rng = np.random.default_rng(rng_)
+
+        # if params is an empty dictionary, then we will initialize the params
+        if params == {}:
+            self.params = {'fit_intercept': rng.choice([True, False])}
+        else:
+            assert len(params) == 1
+            assert 'fit_intercept' in params
+            self.params = params
+
+        self.classifier = LogisticRegression(fit_intercept=self.params['fit_intercept'])
+
+    def fit(self, X, y):
+        self.classifier.fit(X, y)
+        return self.classifier
+
+    def predict(self, X):
+        return self.classifier.predict(X)
+
+    def transform(self, X):
+        # for consistency with the abstract class, we use the regressor's prediction as the transform output
+        return self.predict(X)
+
+    def mutate(self, rng_: rng_t):
+        rng = np.random.default_rng(rng_)
+
+        # randomly pick fit_intercept
+        self.params['fit_intercept'] = rng.choice([True, False])
+
+        # new classifier configuration
+        self.classifier = LogisticRegression(fit_intercept=self.params['fit_intercept'])
+
 # ElasticNet regression
 class ElasticNetNode(ScikitNode, RegressorMixin):
     def __init__(self,
@@ -757,6 +849,85 @@ class ElasticNetNode(ScikitNode, RegressorMixin):
 
         # new regressor configuration
         self.regressor = ElasticNet(**self.params)
+
+# CLASSIFICATION VERSION:
+# ElasticNet classification
+class ElasticNetNodeClassification(ScikitNode, ClassifierMixin):
+    def __init__(self,
+                 rng_: rng_t,
+                 seed: int = -1,
+                 params: Dict = {},
+                 name: name_t = name_t('ElasticNetClassification')):
+        super().__init__(name)
+        rng = np.random.default_rng(rng_)
+
+        # if params is an empty dictionary, then we will initialize the params
+        if params == {}:
+            # l1_ratio should not be 0 or 1, use Lasso or Ridge instead
+            self.params = {'penalty': 'elasticnet',
+                           'solver': 'saga',
+                           'max_iter': 2000,
+                           'C': np.float32(rng.uniform(low=0.1, high=10000.00)),
+                          'l1_ratio': np.float32(rng.uniform(low=0.02, high=0.98)),
+                          'fit_intercept': rng.choice([True, False]),
+                          'random_state': seed}
+        else:
+            assert len(params) == 7
+            assert 'penalty' in params
+            assert 'solver' in params
+            assert 'max_iter' in params
+            assert 'C' in params
+            assert 'l1_ratio' in params
+            assert 'fit_intercept' in params
+            assert 'random_state' in params
+            self.params = params
+
+        self.classifier = LogisticRegression(**self.params)
+
+    def fit(self, X, y):
+        return self.classifier.fit(X, y)
+
+    def predict(self, X):
+        return self.classifier.predict(X)
+
+    def transform(self, X):
+        # for consistency with the abstract class, we use the regressor's prediction as the transform output
+        return self.predict(X)
+
+    def mutate(self, rng):
+        # Current value -> log10 space
+        log10_C = np.float32(np.log10(self.params['C']))
+        # Draw a Gaussian shift in log space
+        log_shift = np.float32(rng.normal(loc=0.0, scale=0.5))   # scale=0.5 ≈ x3 or /3
+        # Propose the new log10(C)
+        log10_C_new = log10_C + log_shift
+        # Hard‑clip using if / elif / else
+        if log10_C_new < np.float32(-1.0):          # lower bound  log10(0.1)
+            log10_C_new = np.float32(-1.0)
+        elif log10_C_new > np.float32(4.0):          # upper bound  log10(10000)
+            log10_C_new = np.float32(4.0)
+        # else: keep log10_C_new as is
+        # Back to linear space
+        self.params['C'] = np.float32(10.0 ** log10_C_new)
+
+        # get a random number from a normal distribution
+        l1_ratio_shift = np.float32(rng.normal(loc=0.0, scale=0.05))
+
+        # check if the l1_ratio is going to be less than 0.02
+        if self.params['l1_ratio'] + l1_ratio_shift < np.float32(0.02):
+            self.params['l1_ratio'] = np.float32(0.02)
+        # check if the l1_ratio is going to be greater than 0.98
+        elif self.params['l1_ratio'] + l1_ratio_shift > np.float32(0.98):
+            self.params['l1_ratio'] = np.float32(0.98)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['l1_ratio'] = self.params['l1_ratio'] + l1_ratio_shift
+
+        # randomly pick fit_intercept
+        self.params['fit_intercept'] = rng.choice([True, False])
+
+        # new classifier configuration
+        self.classifier = LogisticRegression(**self.params)
 
 # SGD regression
 class SGDRegressorNode(ScikitNode, RegressorMixin):
@@ -871,6 +1042,105 @@ class SGDRegressorNode(ScikitNode, RegressorMixin):
         # new regressor configuration
         self.regressor = SGDRegressor(**self.params)
 
+# CLASSIFICATION VERSION:
+# SGD classification
+class SGDClassifierNode(ScikitNode, ClassifierMixin):
+    def __init__(self,
+                 rng_: rng_t,
+                 seed: int = -1,
+                 params: Dict = {},
+                 name: name_t = name_t('SGDClassifier')):
+        super().__init__(name)
+        rng = np.random.default_rng(rng_)
+
+        # if params is an empty dictionary, then we will initialize the params
+        if params == {}:
+            self.params = {'loss': 'log_loss',
+                           'penalty': rng.choice(['l2','l1','elasticnet',None]),
+                           'alpha': np.float32(rng.uniform(low=0.0001, high=10.00)),
+                           'l1_ratio': np.float32(rng.uniform(low=0.02, high=0.98)),
+                           'fit_intercept': rng.choice([True, False]),
+                           'learning_rate': rng.choice(['constant','optimal','invscaling','adaptive']),
+                           'eta0': np.float32(rng.uniform(low=1e-7, high=0.01)),
+                           'random_state': seed}
+        else:
+            assert len(params) == 8
+            assert 'alpha' in params
+            assert 'l1_ratio' in params
+            assert 'loss' in params
+            assert 'eta0' in params
+            assert 'random_state' in params
+            assert 'fit_intercept' in params
+            assert 'penalty' in params
+            assert 'learning_rate' in params
+            self.params = params
+
+        self.classifier = SGDClassifier(**self.params)
+
+    def fit(self, X, y):
+        return self.classifier.fit(X, y)
+
+    def predict(self, X):
+        return self.classifier.predict(X)
+
+    def transform(self, X):
+        #for consistency with the abstract class, we use the regressor's prediction as the transform output
+        return self.predict(X)
+
+    def mutate(self, rng_):
+        rng = np.random.default_rng(rng_)
+
+        # get a random number from a normal distribution
+        alpha_shift = np.float32(rng.normal(loc=0.0, scale=1.0))
+
+        # check if the alpha is going to be less than 0.0001
+        if self.params['alpha'] + alpha_shift < np.float32(0.0001):
+            self.params['alpha'] = np.float32(0.0001)
+        # check if the alpha is going to be greater than 10
+        elif self.params['alpha'] + alpha_shift > np.float32(10.0):
+            self.params['alpha'] = np.float32(10.0)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['alpha'] = self.params['alpha'] + alpha_shift
+
+        # get a random number from a normal distribution
+        l1_ratio_shift = np.float32(rng.normal(loc=0.0, scale=0.05))
+
+        # check if the l1_ratio is going to be less than 0.02
+        if self.params['l1_ratio'] + l1_ratio_shift < np.float32(0.02):
+            self.params['l1_ratio'] = np.float32(0.02)
+        # check if the l1_ratio is going to be greater than 0.98
+        elif self.params['l1_ratio'] + l1_ratio_shift > np.float32(0.98):
+            self.params['l1_ratio'] = np.float32(0.98)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['l1_ratio'] = self.params['l1_ratio'] + l1_ratio_shift
+
+        # get a random number from a normal distribution
+        eta0_shift = np.float32(rng.normal(loc=0.0, scale=1.0))
+
+        # check if the eta0 is going to be less than 0.0001
+        if self.params['eta0'] + eta0_shift < np.float32(0.0001):
+            self.params['eta0'] = np.float32(0.0001)
+        # check if the eta0 is going to be greater than 10
+        elif self.params['eta0'] + eta0_shift > np.float32(10.0):
+            self.params['eta0'] = np.float32(10.0)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['eta0'] = self.params['eta0'] + eta0_shift
+
+        # randomly pick fit_intercept
+        self.params['fit_intercept'] = rng.choice([True, False])
+        # randomly pick loss
+        # self.params['loss'] = rng.choice(['log_loss', 'modified_huber'])
+        # randomly pick penalty
+        self.params['penalty'] = rng.choice(['l2','l1','elasticnet',None])
+        # randomly pick learning_rate
+        self.params['learning_rate'] = rng.choice(['constant','optimal','invscaling','adaptive'])
+
+        # new classifier configuration
+        self.classifier = SGDClassifier(**self.params)
+
 # SVR regression
 class SVRNode(ScikitNode, RegressorMixin):
     def __init__(self,
@@ -961,6 +1231,90 @@ class SVRNode(ScikitNode, RegressorMixin):
 
         # new regressor configuration
         self.regressor = SVR(**self.params)
+
+# CLASSIFICATION VERSION:
+# SVC
+class SVCNode(ScikitNode, ClassifierMixin):
+    def __init__(self,
+                 rng_: rng_t,
+                 params: Dict = {},
+                 name: name_t = name_t('SVC')):
+        super().__init__(name)
+        rng = np.random.default_rng(rng_)
+
+        # if params is an empty dictionary, then we will initialize the params
+        if params == {}:
+            self.params = {'kernel': rng.choice(['linear', 'poly', 'rbf', 'sigmoid']),
+                           'degree': np.int8(rng.choice([1,2,3])),
+                           'gamma': rng.choice(['scale', 'auto']),
+                           'C': np.float32(rng.uniform(low=0.0001, high=10.00)),
+                           'tol': np.float32(rng.uniform(low=1e-5, high=0.5)),
+                           'shrinking': rng.choice([True, False]),
+                           'probability': True}
+        else:
+            assert len(params) == 7
+            assert 'kernel' in params
+            assert 'degree' in params
+            assert 'gamma' in params
+            assert 'C' in params
+            assert 'tol' in params
+            assert 'shrinking' in params
+            assert 'probability' in params
+            self.params = params
+
+        self.classifier = SVC(**self.params)
+
+    def fit(self, X, y):
+        return self.classifier.fit(X, y)
+
+    def predict(self, X):
+        return self.classifier.predict(X)
+
+    def transform(self, X):
+        # for consistency with the abstract class, we use the regressor's prediction as the transform output
+        return self.predict(X)
+
+    def mutate(self, rng_):
+        rng = np.random.default_rng(rng_)
+
+        # get a random number from a normal distribution
+        C_shift = np.float32(rng.normal(loc=0.0, scale=1.0))
+
+        # check if the C is going to be less than 0.0001
+        if self.params['C'] + C_shift < np.float32(0.0001):
+            self.params['C'] = np.float32(0.0001)
+        # check if the C is going to be greater than 10
+        elif self.params['C'] + C_shift > np.float32(10.0):
+            self.params['C'] = np.float32(10.0)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['C'] = self.params['C'] + C_shift
+
+        # get a random number from a normal distribution
+        tol_shift = np.float32(rng.normal(loc=0.0, scale=0.05))
+
+        # check if the tol is going to be less than 1e-5
+        if self.params['tol'] + tol_shift < np.float32(1e-5):
+            self.params['tol'] = np.float32(1e-5)
+        # check if the tol is going to be greater than 0.5
+        elif self.params['tol'] + tol_shift > np.float32(0.5):
+            self.params['tol'] = np.float32(0.5)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['tol'] = self.params['tol'] + tol_shift
+
+        # randomly pick kernel
+        self.params['kernel'] = rng.choice(['linear', 'poly', 'rbf', 'sigmoid'])
+        # randomly pick degree
+        self.params['degree'] = np.int8(rng.choice([1,2,3]))
+        # randomly pick gamma
+        self.params['gamma'] = rng.choice(['scale', 'auto'])
+
+        # randomly pick shrinking
+        self.params['shrinking'] = rng.choice([True, False])
+
+        # new classifier configuration
+        self.classifier = SVC(**self.params)
 
 # Decision tree regression
 class DecisionTreeRegressorNode(ScikitNode, RegressorMixin):
@@ -1053,6 +1407,99 @@ class DecisionTreeRegressorNode(ScikitNode, RegressorMixin):
 
         # new regressor configuration
         self.regressor = DecisionTreeRegressor(**self.params)
+
+# CLASSIFICATION VERSION:
+# Decision tree classification
+class DecisionTreeClassiferNode(ScikitNode, ClassifierMixin):
+    def __init__(self,
+                rng_: rng_t,
+                seed: int = -1,
+                params: Dict = {},
+                name: name_t = name_t('DecisionTreeClassifier')):
+        super().__init__(name)
+        rng = np.random.default_rng(rng_)
+
+        # if params is an empty dictionary, then we will initialize the params
+        if params == {}:
+            self.params = {'criterion': rng.choice(['gini', 'entropy', 'log_loss']),
+                           'splitter': rng.choice(['best', 'random']),
+                           'max_features': rng.choice([None, 'sqrt', 'log2']),
+                           'max_depth': np.int8(rng.integers(1,10)),
+                           'min_samples_split': np.int8(rng.integers(2,20)),
+                           'min_samples_leaf': np.int8(rng.integers(1,20)),
+                           'random_state': seed}
+        else:
+            assert len(params) == 7
+            assert 'criterion' in params
+            assert 'splitter' in params
+            assert 'max_features' in params
+            assert 'max_depth' in params
+            assert 'min_samples_split' in params
+            assert 'min_samples_leaf' in params
+            assert 'random_state' in params
+            self.params = params
+
+        self.classifier = DecisionTreeClassifier(**self.params)
+
+    def fit(self, X, y):
+        return self.classifier.fit(X, y)
+
+    def predict(self, X):
+        return self.classifier.predict(X)
+
+    def transform(self, X):
+        # for consistency with the abstract class, we use the regressor's prediction as the transform output
+        return self.predict(X)
+
+    def mutate(self, rng):
+        # shift for max_depth up or down
+        max_depth_shift = np.int8(rng.choice([-2,-1,1,2]))
+
+        # check if the max_depth is going to be less than 1
+        if self.params['max_depth'] + max_depth_shift < np.int8(1):
+            self.params['max_depth'] = np.int8(1)
+        # check if the max_depth is going to be greater than 10
+        elif self.params['max_depth'] + max_depth_shift > np.int8(10):
+            self.params['max_depth'] = np.int8(10)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['max_depth'] = self.params['max_depth'] + max_depth_shift
+
+        # shift for min_samples_split up or down
+        min_samples_split_shift = np.int8(rng.choice([-2,-1,1,2]))
+
+        # check if the min_samples_split is going to be less than 1
+        if self.params['min_samples_split'] + min_samples_split_shift < np.int8(2):
+            self.params['min_samples_split'] = np.int8(2)
+        # check if the min_samples_split is going to be greater than 20
+        elif self.params['min_samples_split'] + min_samples_split_shift > np.int8(20):
+            self.params['min_samples_split'] = np.int8(20)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['min_samples_split'] = self.params['min_samples_split'] + min_samples_split_shift
+
+        # shift for min_samples_leaf up or down
+        min_samples_leaf_shift = np.int8(rng.choice([-2,-1,1,2]))
+
+        # check if the min_samples_leaf is going to be less than 1
+        if self.params['min_samples_leaf'] + min_samples_leaf_shift < np.int8(1):
+            self.params['min_samples_leaf'] = np.int8(1)
+        # check if the min_samples_leaf is going to be greater than 20
+        elif self.params['min_samples_leaf'] + min_samples_leaf_shift > np.int8(20):
+            self.params['min_samples_leaf'] = np.int8(20)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['min_samples_leaf'] = self.params['min_samples_leaf'] + min_samples_leaf_shift
+
+        # randomly pick criterion
+        self.params['criterion'] = rng.choice(['gini', 'entropy', 'log_loss'])
+        # randomly pick splitter
+        self.params['splitter'] = rng.choice(['best', 'random'])
+        # randomly pick max_features
+        self.params['max_features'] = rng.choice([None, 'sqrt', 'log2'])
+
+        # new classifier configuration
+        self.classifier = DecisionTreeClassifier(**self.params)
 
 # Random forest regression
 class RandomForestRegressorNode(ScikitNode, RegressorMixin):
@@ -1158,6 +1605,112 @@ class RandomForestRegressorNode(ScikitNode, RegressorMixin):
 
         # new regressor configuration
         self.regressor = RandomForestRegressor(**self.params)
+
+# CLASSIFICATION VERSION:
+# Random forest classification
+class RandomForestClassifierNode(ScikitNode, ClassifierMixin):
+    def __init__(self,
+                rng_: rng_t,
+                seed: int = -1,
+                params: Dict = {},
+                name: name_t = name_t('RandomForestClassifier')):
+        super().__init__(name)
+        rng = np.random.default_rng(rng_)
+
+        # if params is an empty dictionary, then we will initialize the params
+        if params == {}:
+            self.params = {'n_estimators': np.int8(rng.integers(10,100)),
+                           'criterion': rng.choice(['gini', 'entropy', 'log_loss']),
+                           'max_depth': np.int8(rng.integers(1,10)),
+                           'max_features': rng.choice([None, 'sqrt', 'log2']),
+                           'min_samples_split': np.int8(rng.integers(2,20)),
+                           'min_samples_leaf': np.int8(rng.integers(1,20)),
+                           'random_state': seed}
+        else:
+            assert len(params) == 8
+            assert 'n_estimators' in params
+            assert 'criterion' in params
+            assert 'splitter' in params
+            assert 'max_depth' in params
+            assert 'max_features' in params
+            assert 'min_samples_split' in params
+            assert 'min_samples_leaf' in params
+            assert 'random_state' in params
+            self.params = params
+
+        self.classifier = RandomForestClassifier(**self.params)
+
+    def fit(self, X, y):
+        return self.classifier.fit(X, y)
+
+    def predict(self, X):
+        return self.classifier.predict(X)
+    def transform(self, X):
+        # for consistency with the abstract class, we use the regressor's prediction as the transform output
+        return self.predict(X)
+
+    def mutate(self, rng_):
+        rng = np.random.default_rng(rng_)
+
+        # get a random number from a uniform distribution
+        n_estimators_shift = np.int8(rng.integers(-10, 10))
+
+        # check if the n_estimators is going to be less than 10
+        if self.params['n_estimators'] + n_estimators_shift < np.int8(10):
+            self.params['n_estimators'] = np.int8(10)
+        # check if the n_estimators is going to be greater than 100
+        elif self.params['n_estimators'] + n_estimators_shift > np.int8(100):
+            self.params['n_estimators'] = np.int8(100)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['n_estimators'] = self.params['n_estimators'] + n_estimators_shift
+
+        # shift for max_depth up or down
+        max_depth_shift = np.int8(rng.choice([-2,-1,1,2]))
+
+        # check if the max_depth is going to be less than 1
+        if self.params['max_depth'] + max_depth_shift < np.int8(1):
+            self.params['max_depth'] = np.int8(1)
+        # check if the max_depth is going to be greater than 10
+        elif self.params['max_depth'] + max_depth_shift > np.int8(10):
+            self.params['max_depth'] = np.int8(10)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['max_depth'] = self.params['max_depth'] + max_depth_shift
+
+        # shift for min_samples_split up or down
+        min_samples_split_shift = np.int8(rng.choice([-2,-1,1,2]))
+
+        # check if the min_samples_split is going to be less than 1
+        if self.params['min_samples_split'] + min_samples_split_shift < np.int8(2):
+            self.params['min_samples_split'] = np.int8(2)
+        # check if the min_samples_split is going to be greater than 20
+        elif self.params['min_samples_split'] + min_samples_split_shift > np.int8(20):
+            self.params['min_samples_split'] = np.int8(20)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['min_samples_split'] = self.params['min_samples_split'] + min_samples_split_shift
+
+        # shift for min_samples_leaf up or down
+        min_samples_leaf_shift = np.int8(rng.choice([-2,-1,1,2]))
+
+        # check if the min_samples_leaf is going to be less than 1
+        if self.params['min_samples_leaf'] + min_samples_leaf_shift < np.int8(1):
+            self.params['min_samples_leaf'] = np.int8(1)
+        # check if the min_samples_leaf is going to be greater than 20
+        elif self.params['min_samples_leaf'] + min_samples_leaf_shift > np.int8(20):
+            self.params['min_samples_leaf'] = np.int8(20)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['min_samples_leaf'] = self.params['min_samples_leaf'] + min_samples_leaf_shift
+
+        # randomly pick criterion
+        self.params['criterion'] = rng.choice(['gini', 'entropy', 'log_loss'])
+        # randomly pick max_features
+        self.params['max_features'] = rng.choice([None, 'sqrt', 'log2'])
+
+        # new classifier configuration
+        self.classifier = RandomForestClassifier(**self.params)
 
 # Gradient boosting regression
 class GradientBoostingRegressorNode(ScikitNode, RegressorMixin):
@@ -1279,6 +1832,128 @@ class GradientBoostingRegressorNode(ScikitNode, RegressorMixin):
 
         # new regressor configuration
         self.regressor = GradientBoostingRegressor(**self.params)
+
+# CLASSIFICATION VERSION:
+# Gradient boosting classifier
+class GradientBoostingClassifierNode(ScikitNode, ClassifierMixin):
+    def __init__(self,
+                rng_: rng_t,
+                seed: int = -1,
+                params: Dict = {},
+                name: name_t = name_t('GradientBoostingClassifier')):
+        super().__init__(name)
+        rng = np.random.default_rng(rng_)
+
+        # if params is an empty dictionary, then we will initialize the params
+        if params == {}:
+            self.params = {'loss': rng.choice(['log_loss', 'exponential']),
+                           'learning_rate': rng.uniform(low=1e-3, high=1.0),
+                           'n_estimators': np.int8(rng.integers(10,100)),
+                           'criterion': rng.choice(['squared_error', 'friedman_mse']),
+                           'max_depth': rng.integers(1,10),
+                           'min_samples_split': rng.integers(2,20),
+                           'min_samples_leaf': rng.integers(1,20),
+                           'random_state': seed}
+        else:
+            assert len(params) == 8
+            assert 'loss' in params
+            assert 'learning_rate' in params
+            assert 'n_estimators' in params
+            assert 'criterion' in params
+            assert 'max_depth' in params
+            assert 'min_samples_split' in params
+            assert 'min_samples_leaf' in params
+            assert 'random_state' in params
+            self.params = params
+
+        # initialize the classifier
+        self.classifier = GradientBoostingClassifier(**self.params)
+
+    def fit(self, X, y):
+        return self.classifier.fit(X, y)
+
+    def predict(self, X):
+        return self.classifier.predict(X)
+
+    def transform(self, X):
+        # for consistency with the abstract class, we use the regressor's prediction as the transform output
+        return self.predict(X)
+
+    def mutate(self, rng_):
+        rng = np.random.default_rng(rng_)
+
+        # get random number from a normal distribution
+        learning_rate_shift = rng.normal(loc=0.0, scale=0.5)
+
+        # check if the learning_rate is going to be less than 1e-3
+        if self.params['learning_rate'] + learning_rate_shift < 1e-3:
+            self.params['learning_rate'] = 1e-3
+        # check if the learning_rate is going to be greater than 10.0
+        elif self.params['learning_rate'] + learning_rate_shift > 10.0:
+            self.params['learning_rate'] = 10.0
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['learning_rate'] = self.params['learning_rate'] + learning_rate_shift
+
+        # shift for n_estimators up or down
+        n_estimators_shift = np.int8(rng.choice([-10, 10]))
+
+        # check if the n_estimators is going to be less than 10
+        if self.params['n_estimators'] + n_estimators_shift < np.int8(10):
+            self.params['n_estimators'] = np.int8(10)
+        # check if the n_estimators is going to be greater than 100
+        elif self.params['n_estimators'] + n_estimators_shift > np.int8(100):
+            self.params['n_estimators'] = np.int8(100)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['n_estimators'] = self.params['n_estimators'] + n_estimators_shift
+
+        # shift for max_depth up or down
+        max_depth_shift = np.int8(rng.choice([-2,-1,1,2]))
+
+        # check if the max_depth is going to be less than 1
+        if self.params['max_depth'] + max_depth_shift < np.int8(1):
+            self.params['max_depth'] = np.int8(1)
+        # check if the max_depth is going to be greater than 10
+        elif self.params['max_depth'] + max_depth_shift > np.int8(10):
+            self.params['max_depth'] = np.int8(10)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['max_depth'] = self.params['max_depth'] + max_depth_shift
+
+        # shift for min_samples_split up or down
+        min_samples_split_shift = np.int8(rng.choice([-2,-1,1,2]))
+
+        # check if the min_samples_split is going to be less than 1
+        if self.params['min_samples_split'] + min_samples_split_shift < np.int8(2):
+            self.params['min_samples_split'] = np.int8(2)
+        # check if the min_samples_split is going to be greater than 20
+        elif self.params['min_samples_split'] + min_samples_split_shift > np.int8(20):
+            self.params['min_samples_split'] = np.int8(20)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['min_samples_split'] = self.params['min_samples_split'] + min_samples_split_shift
+
+        # shift for min_samples_leaf up or down
+        min_samples_leaf_shift = np.int8(rng.choice([-2,-1,1,2]))
+
+        # check if the min_samples_leaf is going to be less than 1
+        if self.params['min_samples_leaf'] + min_samples_leaf_shift < np.int8(1):
+            self.params['min_samples_leaf'] = np.int8(1)
+        # check if the min_samples_leaf is going to be greater than 20
+        elif self.params['min_samples_leaf'] + min_samples_leaf_shift > np.int8(20):
+            self.params['min_samples_leaf'] = np.int8(20)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.params['min_samples_leaf'] = self.params['min_samples_leaf'] + min_samples_leaf_shift
+
+        # randomly pick loss
+        self.params['loss'] = rng.choice(['log_loss', 'exponential'])
+        # randomly pick criterion
+        self.params['criterion'] = rng.choice(['squared_error', 'friedman_mse'])
+
+        # new classifier configuration
+        self.classifier = GradientBoostingClassifier(**self.params)
 
 ##########################################################################################
 ############################ the ld classes ##############################################
@@ -1454,6 +2129,7 @@ class LDSelector(ScikitNode, TransformerMixin):
                     if snp == peak_snp:
                         continue
                     X_full = pd.concat([X_peak, genotype_df_encoded[[snp]]], axis=1)
+                    # ADD BOOLEAN/IF CONDITION HERE
                     model = LinearRegression().fit(X_full, y)
                     beta = model.coef_[-1]
                     residuals = y - model.predict(X_full)
