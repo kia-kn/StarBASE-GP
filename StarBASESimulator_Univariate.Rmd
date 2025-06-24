@@ -1,0 +1,362 @@
+---
+title: "StarBASESimulator_Univariate"
+author: "Philip Freda, PhD"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Description
+
+StarBASE style QTL simulator with outer-loop Tjur's R2 calibration.
+
+## Tidy Up
+
+```{r, include=FALSE}
+while (length(dev.list()) > 0) {dev.off()} 
+rm(list = ls()) 
+cat("\014")
+```
+
+## Load Required Libraries
+
+```{r libraries}
+packages <- c("dplyr", "ggplot2", "gridExtra")
+invisible(lapply(packages, function(pkg) {
+  if (!requireNamespace(pkg, quietly = TRUE)) install.packages(pkg)
+  suppressPackageStartupMessages(library(pkg, character.only = TRUE))}))
+```
+
+## Set Working Directory
+
+```{r}
+base_dir <- "~/Library/CloudStorage/OneDrive-Cedars-SinaiHealthSystem/StarBASE-GP/Classification"
+```
+
+#### Parameters
+
+```{r params}
+set.seed(13)
+N          <- 3000           # number of individuals
+tNrSNP     <- 10000          # total SNPs
+cNrSNP     <- 5              # causal SNPs
+n_chr      <- 20             # number of chromosomes
+snp_per_chr<- tNrSNP / n_chr # SNPs per chromosome
+maf_range  <- c(0.3, 0.4)    # minor allele freq range
+noise_sd   <- 0.0            # residual noise on logit scale
+case_ratio <- 0.5            # fraction of cases
+max_outer  <- 20             # max outer iterations for convergence
+max_inner  <- 5000           # max inner iterations for hill-climb
+
+# Inheritance models
+inheritance_models <- list(
+  Additive      = c(0.0, 0.5, 1.0),
+  Subadditive   = c(0.0, 0.25, 1.0),
+  Superadditive = c(0.0, 0.75, 1.0),
+  Dominant      = c(0.0, 1.0, 1.0),
+  Recessive     = c(0.0, 0.0, 1.0),
+  Heterosis     = c(0.0, 1.0, 0.0),
+  Underdominant = c(0.5, 0.0, 1.0),
+  Overdominant  = c(0.0, 1.0, 0.5))
+
+qtl_models   <- c("Additive", "Dominant", "Recessive", "Superadditive", "Heterosis")
+tjur_targets <- c(0.01, 0.01, 0.01, 0.01, 0.01)
+tjur_tol     <- 0.002 # +/- tolerance for Tjur's R2
+```
+
+#### Simulate Genotypes
+
+```{r genotype simulation}
+genos     <- matrix(NA, nrow = N, ncol = tNrSNP)
+snp_names <- character(tNrSNP)
+idx       <- 1
+for (chr in 1:n_chr) {
+  for (j in 1:snp_per_chr) {
+    maf <- runif(1, maf_range[1], maf_range[2])
+    raw <- rbinom(N, 2, maf)
+    genos[, idx] <- ifelse(raw == 0, 0.0, ifelse(raw == 1, 0.5, 1.0))
+    snp_names[idx] <- paste0(chr, ".", sample(1e5:1e7,1))
+    idx <- idx + 1}}
+colnames(genos) <- snp_names
+
+# Sample causal QTLs
+qtl_indices    <- sample(seq_len(tNrSNP), cNrSNP)
+qtl_snp_names  <- colnames(genos)[qtl_indices]
+```
+
+#### Helper: raw Tjur's R2 for simulator beta calibration
+
+```{r beta calibration helper}
+tjur_r2 <- function(geno, beta, noise_sd, case_ratio) {
+  eta  <- geno * beta + rnorm(length(geno), 0, noise_sd)
+  prob <- 1 / (1 + exp(-eta))
+  n_c  <- round(length(prob) * case_ratio)
+  bin  <- integer(length(prob))
+  bin[order(prob, decreasing = TRUE)[1:n_c]] <- 1
+  mean(prob[bin == 1]) - mean(prob[bin == 0])}
+```
+
+#### Calibrate initial betas via uniroot so each QTL's raw Tjur's R2 ≈ target
+
+```{r beta calibration}
+qtl_betas <- numeric(cNrSNP)
+for (i in seq_along(qtl_indices)) {
+  g_raw  <- genos[, qtl_indices[i]]
+  target <- tjur_targets[i]
+  f_beta <- function(b) tjur_r2(g_raw, b, noise_sd, case_ratio) - target
+  qtl_betas[i] <- uniroot(f_beta, c(0, 50))$root}
+```
+
+#### Precompute for hill-climb
+
+```{r hill climb precompute}
+g_list   <- lapply(qtl_indices, function(i) genos[, i])
+exp_norm <- lapply(qtl_models, function(m) {
+  enc <- inheritance_models[[m]]
+  (enc - min(enc)) / diff(range(enc))})
+exp_diff <- lapply(exp_norm, diff)
+```
+
+#### Helper: compute regression-based Tjur's R2
+
+```{r Tjur's regression R2 helper}
+compute_regression_tjurs <- function(pheno, betas) {
+  sapply(seq_along(g_list), function(j) {
+    g   <- g_list[[j]]
+    eta <- g * betas[j]
+    fit <- glm(pheno ~ eta, family = binomial)
+    preds <- predict(fit, type = "response")
+    mean(preds[pheno == 1]) - mean(preds[pheno == 0])})}
+```
+
+#### Inner function: build phenotype via threshold + hill climb for shape
+
+```{r build phenotype}
+build_pheno <- function(betas) {
+  eta       <- Reduce(`+`, Map(function(g,b) g*b, g_list, betas))
+  prob_base <- 1 / (1 + exp(-eta))
+  n_c       <- round(N * case_ratio)
+  pheno     <- integer(N)
+  pheno[order(prob_base, decreasing = TRUE)[1:n_c]] <- 1
+  
+  score_fn <- function(p) {
+    sum(sapply(seq_along(g_list), function(j) {
+      obs  <- tapply(p, g_list[[j]], mean)
+      obsn <- (obs - min(obs)) / diff(range(obs))
+      sum((diff(obsn) - exp_diff[[j]])^2)}))}
+  
+  best_score <- score_fn(pheno)
+  for (it in seq_len(max_inner)) {
+    ci <- sample(which(pheno == 1), 1)
+    ui <- sample(which(pheno == 0), 1)
+    p2 <- pheno
+    p2[ci] <- 0; p2[ui] <- 1
+    sc <- score_fn(p2)
+    if (sc < best_score) {
+      pheno      <- p2
+      best_score <- sc}}
+  pheno}
+```
+
+#### Outer-loop: adjust betas until all regression-Tjur’s R2 ≥ target - tol
+
+```{r outer loop adjustment}
+for (iter in seq_len(max_outer)) {
+  pheno <- build_pheno(qtl_betas)
+  tjurs <- compute_regression_tjurs(pheno, qtl_betas)
+  
+  diffs <- tjurs - tjur_targets
+  if (all(diffs >= -tjur_tol)) {
+    message("All Tjurs >= target - tol on iter ", iter,
+            " (min diff = ", round(min(diffs), 3), ")")
+    break}
+  
+  low_idx <- which(diffs < -tjur_tol)
+  qtl_betas[low_idx] <- qtl_betas[low_idx] *
+    (tjur_targets[low_idx] / tjurs[low_idx])
+  message(sprintf("Iter %d: bumped %d betas (min diff = %0.3f)",
+                  iter, length(low_idx), min(diffs)))}
+
+# push final phenotype into global scope
+binary_pheno <- pheno
+```
+
+#### Final checks & summary
+
+```{r final checks}
+final_shape_sc <- sum(sapply(seq_along(g_list), function(j) {
+  obs  <- tapply(binary_pheno, g_list[[j]], mean)
+  obsn <- (obs - min(obs)) / diff(range(obs))
+  sum((diff(obsn) - exp_diff[[j]])^2)}))
+
+final_tjurs <- compute_regression_tjurs(binary_pheno, qtl_betas)
+
+summary_df <- data.frame(
+  SNP            = qtl_snp_names,
+  Model          = qtl_models,
+  Beta           = round(qtl_betas, 3),
+  Observed_Tjur2 = round(final_tjurs, 4),
+  Target_Tjur2   = tjur_targets)
+
+cat("\n[CHECK] Shape match score:", round(final_shape_sc, 4), "\n")
+cat("Phenotype distribution (cases / controls):\n")
+print(table(binary_pheno))
+
+cat("\nTrue causal SNPs summary:\n")
+print(summary_df)
+
+# Sanity‐check univariate regressions in one shot
+reg_results <- do.call(rbind, lapply(seq_along(qtl_indices), function(i) {
+  snp_name <- qtl_snp_names[i]
+  model    <- qtl_models[i]
+  g        <- genos[, qtl_indices[i]]
+  
+  # Fit logistic regression
+  fit      <- glm(binary_pheno ~ g, family = binomial)
+  null_fit <- glm(binary_pheno ~ 1, family = binomial)
+  coefs    <- summary(fit)$coefficients[2, ]
+  ll_full  <- as.numeric(logLik(fit))
+  ll_null  <- as.numeric(logLik(null_fit))
+  preds    <- predict(fit, type = "response")
+  
+  data.frame(
+    SNP               = snp_name,
+    InheritanceModel  = model,
+    Beta              = coefs["Estimate"],
+    Pval              = coefs["Pr(>|z|)"],
+    PseudoR2          = 1 - (ll_full / ll_null),
+    TjurR2            = mean(preds[binary_pheno == 1]) -
+      mean(preds[binary_pheno == 0]),
+    stringsAsFactors = FALSE)}))
+
+cat("\nSanity-check regression stats:\n")
+print(reg_results)
+```
+
+#### Plot observed vs expected proportions
+
+```{r inheritance plotting}
+plot_list <- vector("list", length(qtl_indices))
+geno_levels <- c(0, 0.5, 1)
+
+for (i in seq_along(qtl_indices)) {
+  snp   <- qtl_snp_names[i]
+  model <- qtl_models[i]
+  geno  <- genos[, qtl_indices[i]]
+  
+  obs_prop <- sapply(geno_levels, function(l) mean(binary_pheno[geno == l]))
+  enc      <- inheritance_models[[model]]
+  exp_prop <- (enc - min(enc)) / diff(range(enc))
+  
+  df <- data.frame(
+    Genotype      = factor(geno_levels, levels = geno_levels),
+    ObsProportion = obs_prop,
+    ExpProportion = exp_prop)
+  
+  p <- ggplot(df, aes(x = Genotype)) +
+    geom_bar(aes(y = ObsProportion, fill = Genotype),
+             stat = "identity", width = 0.6) +
+    geom_line(aes(y = ExpProportion, group = 1),
+              linetype = "dashed", linewidth = 0.8) +
+    geom_point(aes(y = ExpProportion),
+               shape = 21, size = 3, fill = "black", color = "white") +
+    geom_text(aes(y = ObsProportion, label = sprintf("%.2f", ObsProportion)),
+              vjust = -0.5, size = 3.5) +
+    geom_text(aes(y = ExpProportion, label = sprintf("E=%.2f", ExpProportion)),
+              vjust = 1.5, size = 3.2) +
+    scale_fill_manual(values = c("green","blue","red")) +
+    ylim(0, 1) +
+    labs(
+      title = paste("QTL:", snp, "(", model, ")"),
+      x     = "Genotype",
+      y     = "Proportion") +
+    theme_minimal(base_size = 12) +
+    theme(legend.position = "none")  # remove legends
+  
+  plot_list[[i]] <- p}
+
+grid.arrange(grobs = plot_list, ncol = ceiling(sqrt(length(plot_list))))
+```
+
+#### Full GWAS and Summary Stats
+
+```{r gwas and summary, cache=FALSE}
+# Rebuild QTL summary results for inheritance model tracking
+gwas_results <- data.frame(
+  SNP      = colnames(genos),
+  Beta     = NA_real_,
+  Pval     = NA_real_,
+  PseudoR2 = NA_real_,
+  TjurR2   = NA_real_)
+
+for (i in seq_len(ncol(genos))) {
+  snp_data     <- genos[, i]
+  fit          <- glm(binary_pheno ~ snp_data, family = binomial)
+  null_fit     <- glm(binary_pheno ~ 1,         family = binomial)
+  coef_sum     <- summary(fit)$coefficients
+  ll_full      <- as.numeric(logLik(fit))
+  ll_null      <- as.numeric(logLik(null_fit))
+  preds        <- predict(fit, type = "response")
+  
+  gwas_results$Beta[i]     <- coef_sum[2, "Estimate"]
+  gwas_results$Pval[i]     <- coef_sum[2, "Pr(>|z|)"]
+  gwas_results$PseudoR2[i] <- 1 - (ll_full / ll_null)
+  gwas_results$TjurR2[i]   <- mean(preds[binary_pheno==1]) -
+    mean(preds[binary_pheno==0])}
+
+# multiple‐test correction
+gwas_results$P_Bonferroni <- p.adjust(gwas_results$Pval, method = "bonferroni")
+gwas_results$P_FDR       <- p.adjust(gwas_results$Pval, method = "fdr")
+
+# Top 10 by raw p-value
+top_hits <- head(gwas_results[order(gwas_results$Pval), ], 10)
+
+# Look up true inheritance models from summary_df
+# (make sure summary_df exists, with summary_df$SNP & summary_df$Model)
+top_hits$InheritanceModel <- summary_df$Model[
+  match(top_hits$SNP, summary_df$SNP)]
+
+cat("\nTop 10 SNPs by raw GWAS p-value:\n")
+print(top_hits[, c("SNP","InheritanceModel","Beta","Pval",
+                   "PseudoR2","TjurR2","P_Bonferroni","P_FDR")])
+
+# Which of these are true QTLs?
+is_true <- top_hits$SNP %in% summary_df$SNP
+cat("\nAre true QTLs among top 10 hits?\n")
+print(data.frame(
+  SNP               = top_hits$SNP,
+  IsTrueQTL         = is_true,
+  InheritanceModel  = top_hits$InheritanceModel))
+
+# True QTLs passing Bonferroni/FDR
+cat("\nTrue QTLs detected at Bonferroni P<0.05:\n")
+print(intersect(summary_df$SNP,
+                gwas_results$SNP[gwas_results$P_Bonferroni < 0.05]))
+
+cat("\nTrue QTLs detected at FDR<0.05:\n")
+print(intersect(summary_df$SNP,
+                gwas_results$SNP[gwas_results$P_FDR < 0.05]))
+```
+
+#### Final export
+
+```{r export}
+snp_split <- do.call(rbind, strsplit(colnames(genos), split = "\\."))
+snp_chr <- as.integer(snp_split[, 1])
+snp_bp  <- as.integer(snp_split[, 2]) 
+snp_order <- order(snp_chr, snp_bp)
+genos_sorted <- genos[, snp_order]
+colnames(genos_sorted) <- colnames(genos)[snp_order]
+
+genotype_df <- as.data.frame(genos_sorted)
+full_data <- cbind(genotype_df, y = binary_pheno)
+
+write.csv(full_data, 
+  file = file.path(path.expand(base_dir), 
+  "simulated_classification_GWAS_1.csv"),
+  row.names = FALSE)
+```
+

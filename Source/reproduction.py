@@ -15,8 +15,12 @@ import copy as cp
 
 # feature selectors
 from .scikit_node import VarianceThresholdNode, SelectPercentileNode, SelectFweNode, SelectFromModelLasso, SelectFromModelTree, SequentialFeatureSelectorNode, LDSelector, FeatureEncodingFrequencySelector
+# NEW: feature selectors classification-specific (VarianceThresholdNode and FeatureEncodingFrequencySelector present for both)
+from .scikit_node import SelectPercentileNodeClassification, SelectFweNodeClassification, SelectFromModelLogisticL1, SelectFromModelTreeClassification, SequentialFeatureSelectorNodeClassification, LDSelectorClassification
 # regressors
 from .scikit_node import LinearRegressionNode, RandomForestRegressorNode, SGDRegressorNode, DecisionTreeRegressorNode, ElasticNetNode, SVRNode, GradientBoostingRegressorNode
+# NEW: classifiers
+from .scikit_node import LogisticRegressionNode, ElasticNetNodeClassification, SGDClassifierNode, SVCNode, DecisionTreeClassifierNode, RandomForestClassifierNode, GradientBoostingClassifierNode
 
 rng_t = np.random.Generator
 pop_size_t = np.uint16
@@ -60,38 +64,70 @@ class Reproduction:
         return
 
     # method to generate the initial population
-    def generate_random_pipeline(self, rng_: rng_t, snps: snps_t, seed: int,) -> Pipeline:
+    # NEW: add new parameter "problem_type" (classification or regression)
+    def generate_random_pipeline(self, rng_: rng_t, snps: snps_t, seed: int, problem_type: str) -> Pipeline:
         # quick checks
         assert len(snps) > 0
 
         # set rng
         rng = np.random.default_rng(rng_)
 
+        # NEW: if condition based on problem type to select selector_node
         # randomly select selector node
-        selector_node = rng.choice([VarianceThresholdNode(rng_=rng),
-                                    SelectPercentileNode(rng_=rng),
-                                    SelectFweNode(rng_=rng),
-                                    SelectFromModelLasso(rng_=rng, seed=seed),
-                                    SelectFromModelTree(rng_=rng, seed=seed),
-                                    SequentialFeatureSelectorNode(rng_=rng, seed=seed),
-                                    FeatureEncodingFrequencySelector(rng_=rng),
-                                ])
+        if problem_type == "regression":
+            selector_node = rng.choice([VarianceThresholdNode(rng_=rng),
+                                        SelectPercentileNode(rng_=rng),
+                                        SelectFweNode(rng_=rng),
+                                        SelectFromModelLasso(rng_=rng, seed=seed),
+                                        SelectFromModelTree(rng_=rng, seed=seed),
+                                        SequentialFeatureSelectorNode(rng_=rng, seed=seed),
+                                        FeatureEncodingFrequencySelector(rng_=rng),
+                                    ])
+        elif problem_type == "classification":
+            selector_node = rng.choice([VarianceThresholdNode(rng_=rng),
+                                        SelectPercentileNodeClassification(rng_=rng),
+                                        SelectFweNodeClassification(rng_=rng),
+                                        SelectFromModelLogisticL1(rng_=rng, seed=seed),
+                                        SelectFromModelTreeClassification(rng_=rng, seed=seed),
+                                        SequentialFeatureSelectorNodeClassification(rng_=rng, seed=seed),
+                                        FeatureEncodingFrequencySelector(rng_=rng),
+                                    ])
+
         # randomly select root node
         # add a boolean flag within evolver.py
         # if statement: if regression use these nodes, if classification these nodes
-        root_node = rng.choice([LinearRegressionNode(rng_=rng),
-                                RandomForestRegressorNode(rng_=rng, seed=seed),
-                                SGDRegressorNode(rng_=rng, seed=seed),
-                                DecisionTreeRegressorNode(rng_=rng, seed=seed),
-                                ElasticNetNode(rng_=rng, seed=seed),
-                                SVRNode(rng_=rng),
-                                GradientBoostingRegressorNode(rng_=rng, seed=seed),
-                            ])
+        # NEW: if condition based on problem type to select root_node
+        if problem_type == "regression":
+            root_node = rng.choice([LinearRegressionNode(rng_=rng),
+                                    RandomForestRegressorNode(rng_=rng, seed=seed),
+                                    SGDRegressorNode(rng_=rng, seed=seed),
+                                    DecisionTreeRegressorNode(rng_=rng, seed=seed),
+                                    ElasticNetNode(rng_=rng, seed=seed),
+                                    SVRNode(rng_=rng),
+                                    GradientBoostingRegressorNode(rng_=rng, seed=seed),
+                                ])
+        elif problem_type == "classification":
+            root_node = rng.choice([LogisticRegressionNode(rng_=rng),
+                                    RandomForestClassifierNode(rng_=rng, seed=seed),
+                                    SGDClassifierNode(rng_=rng, seed=seed),
+                                    DecisionTreeClassifierNode(rng_=rng, seed=seed),
+                                    ElasticNetNodeClassification(rng_=rng, seed=seed),
+                                    SVCNode(rng_=rng),
+                                    GradientBoostingClassifierNode(rng_=rng, seed=seed),
+                                ])
 
-        return Pipeline(ld_node=LDSelector(rng_=rng, seed=seed),
-                        selector_node=selector_node,
-                        root_node=root_node,
-                        uni_snps=snps)
+        # NEW: if condition based on problem type to select LDSelector node
+        if problem_type == "regression":
+            return Pipeline(ld_node=LDSelector(rng_=rng, seed=seed),
+                            selector_node=selector_node,
+                            root_node=root_node,
+                            uni_snps=snps)
+        elif problem_type == "classification":
+            return Pipeline(ld_node=LDSelectorClassification(rng_=rng, seed=seed),
+                            selector_node=selector_node,
+                            root_node=root_node,
+                            uni_snps=snps)
+
 
     # method to generate the order of variation operators
     def variation_order(self, rng_: rng_t, offpring_cnt: pop_size_t) -> Tuple[List[str], pop_size_t]:
@@ -128,13 +164,15 @@ class Reproduction:
         return order, pop_size_t(sum(parent_count[op] for op in order))
 
     # method to generate offspring
+    # NEW: add problem_type parameter to pass into mutate, crossover, mutate & crossover to set bad SNP threshold
     def produce_offspring(self,
                           rng_: rng_t,
                           hub: SnpHub,
                           offspring_cnt: pop_size_t,
                           population: List[Pipeline],
                           parent_ids: List[pop_size_t],
-                          order: List[str]) -> List[Pipeline]:
+                          order: List[str],
+                          problem_type: str) -> List[Pipeline]:
         # quick checks
         assert len(parent_ids) > 0
         assert len(population) > 0
@@ -154,18 +192,18 @@ class Reproduction:
         for op in order:
             # mutation only
             if op == 'm':
-                off, cnt = self.mutate(rng, population[parent_ids[p_id]], hub)
+                off, cnt = self.mutate(rng, population[parent_ids[p_id]], hub, problem_type)
                 offspring.append(off)
                 p_id += 1
                 mut_cnt += cnt
             # crossover only
             elif op == 'c':
-                off = self.crossover(rng, population[parent_ids[p_id]], population[parent_ids[p_id+1]], hub)
+                off = self.crossover(rng, population[parent_ids[p_id]], population[parent_ids[p_id+1]], hub, problem_type)
                 cnt = 0
 
                 # coin flip to decide if we should mutate the offspring
                 if rng.choice([True, False], p=[self.mut_prob, 1.0-self.mut_prob]):
-                    off, cnt = self.mutate_post_crossover(rng, off, hub)
+                    off, cnt = self.mutate_post_crossover(rng, off, hub, problem_type)
 
                 offspring.append(off)
                 p_id += 2
@@ -183,10 +221,12 @@ class Reproduction:
         return offspring
 
     # what mutation are we applying to the pipeline
+    # NEW: problem_type parameter to pass into remove_bad_snps later
     def mutate(self,
                rng_: rng_t,
                parent: Pipeline,
-               hub: SnpHub) -> Tuple[Pipeline, np.uint16]:
+               hub: SnpHub,
+               problem_type: str) -> Tuple[Pipeline, np.uint16]:
 
         # number of snps added to the offspring
         mut_cnt = np.uint16(0)
@@ -197,7 +237,7 @@ class Reproduction:
         assert(len(parent.get_trait_feature_names()) > 0)
 
         # get parent uni snps and remove any bad snps
-        parent_uni_snps = cp.deepcopy(self.remove_bad_snps(parent.get_trait_feature_names(), hub))
+        parent_uni_snps = cp.deepcopy(self.remove_bad_snps(parent.get_trait_feature_names(), hub, problem_type))
 
         assert(len(parent_uni_snps) > 0)
 
@@ -231,10 +271,12 @@ class Reproduction:
         return offspring, mut_cnt
 
     # what mutation are we applying to the pipeline - mutation function for offspring after crossover
+    # NEW: problem_type parameter to pass into remove_bad_snps later
     def mutate_post_crossover(self,
                 rng_: rng_t,
                 offspring: Pipeline,
-                hub: SnpHub) -> Tuple[Pipeline, np.uint16]:
+                hub: SnpHub,
+                problem_type: str) -> Tuple[Pipeline, np.uint16]:
 
          # number of snps added to the offspring
          mut_cnt = np.uint16(0)
@@ -246,7 +288,7 @@ class Reproduction:
          assert(len(offspring.get_uni_snps()) > 0)
 
          # get parent uni snps and remove any bad snps
-         offspring_uni_snps = cp.deepcopy(self.remove_bad_snps(offspring.get_uni_snps(), hub))
+         offspring_uni_snps = cp.deepcopy(self.remove_bad_snps(offspring.get_uni_snps(), hub, problem_type))
 
          assert(len(offspring_uni_snps) > 0)
 
@@ -334,11 +376,13 @@ class Reproduction:
             exit("Unknown mutation function", -1)
 
     # execute a crossover between two pipelines
+    # NEW: problem_type parameter to pass into remove_bad_snps later
     def crossover(self,
                   rng_: np.random.Generator,
                   parent1: Pipeline,
                   parent2: Pipeline,
-                  hub: SnpHub) -> Pipeline:
+                  hub: SnpHub,
+                  problem_type: str) -> Pipeline:
 
         rng = np.random.default_rng(rng_)
 
@@ -347,8 +391,8 @@ class Reproduction:
         assert len(parent2.get_trait_feature_names()) > 0
 
         # combine the univariate snps from both parents but remove any bad snps first
-        p1_snps = cp.deepcopy(self.remove_bad_snps(parent1.get_trait_feature_names(), hub))
-        p2_snps = cp.deepcopy(self.remove_bad_snps(parent2.get_trait_feature_names(), hub))
+        p1_snps = cp.deepcopy(self.remove_bad_snps(parent1.get_trait_feature_names(), hub, problem_type))
+        p2_snps = cp.deepcopy(self.remove_bad_snps(parent2.get_trait_feature_names(), hub, problem_type))
 
         # combine the snps from both parents and make sure we have at least one
         combined_snps = p1_snps.union(p2_snps)
@@ -380,7 +424,8 @@ class Reproduction:
                         root_node=cp.deepcopy(parent1.get_root_node()) if rng.choice([True, False]) else cp.deepcopy(parent2.get_root_node()))
 
     # remove bad snps: r2 < 0 and snp has been pruned
-    def remove_bad_snps(self, snps: Set, hub: SnpHub) -> Set:
+    # NEW
+    def remove_bad_snps(self, snps: Set, hub: SnpHub, problem_type: str) -> Set:
         """
         Function to remove bad snps with r2<0 for a given set of snps
 
@@ -388,11 +433,20 @@ class Reproduction:
         snps: Set of snps
         """
         good_snps = set()
-        for snp_name in snps:
-            # check if r2 is positive
-            if hub.get_uni_res(snp_name) > np.float32(0.0) and hub.has_been_pruned(snp_name) == False:
-                # add to good snps
-                good_snps.add(snp_name)
+        # NEW: SNP removal threshold dependent on problem type
+        if problem_type == "regression":
+            for snp_name in snps:
+                # check if r2 is positive
+                if hub.get_uni_res(snp_name) > np.float32(0.0) and hub.has_been_pruned(snp_name) == False:
+                    # add to good snps
+                    good_snps.add(snp_name)
+        elif problem_type == "classification":
+            for snp_name in snps:
+                # check if Tjur r2 is > 0.001
+                # *TEMP CHANGE TO 0.0001 for synthetic data testing
+                if hub.get_uni_res(snp_name) > np.float32(0.0001) and hub.has_been_pruned(snp_name) == False:
+                    # add to good snps
+                    good_snps.add(snp_name)
         # return the good snps
         assert(0 < len(good_snps) <= len(snps))
         return good_snps

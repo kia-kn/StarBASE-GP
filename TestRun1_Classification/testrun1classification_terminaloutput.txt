@@ -1,0 +1,743 @@
+2025-06-23 19:28:44,254	INFO worker.py:1908 -- Started a local Ray instance. View the dashboard at 127.0.0.1:8265 
+
+Loading data...
+Path: ./simulated_classification_GWAS_1_copy.csv
+Dataset split seed: 0
+X_data.shape: (3000, 10000)
+y_data.shape: (3000,)
+
+Genotype data:        1.122429  1.124361  1.130183  ...  20.9952799  20.9960930  20.9985619
+0          0.5       0.5       0.5  ...         0.0         1.0         0.0
+1          0.5       0.0       0.5  ...         0.5         0.5         0.5
+2          0.0       0.0       0.5  ...         1.0         1.0         0.5
+3          0.5       0.0       0.5  ...         0.0         0.5         0.5
+4          0.0       0.5       0.0  ...         0.5         0.0         1.0
+...        ...       ...       ...  ...         ...         ...         ...
+2995       0.0       0.5       1.0  ...         0.0         0.0         0.0
+2996       0.5       0.0       0.0  ...         0.0         0.5         0.0
+2997       0.0       0.5       0.5  ...         0.0         0.0         0.5
+2998       0.5       0.5       0.5  ...         0.0         0.5         0.5
+2999       0.5       0.0       0.5  ...         0.5         0.5         0.0
+
+[3000 rows x 10000 columns]
+X_train_new.shape: (1500, 10000)
+X_train values:        1.122429  1.124361  1.130183  ...  20.9952799  20.9960930  20.9985619
+689        0.5       0.0       0.0  ...         0.5         0.5         0.0
+1146       0.5       0.5       0.5  ...         0.5         0.0         0.5
+1069       0.5       0.5       0.5  ...         0.5         0.5         0.5
+214        0.5       0.0       0.5  ...         0.5         0.0         0.0
+2533       0.5       0.0       0.0  ...         0.5         1.0         0.5
+...        ...       ...       ...  ...         ...         ...         ...
+763        0.0       0.0       0.0  ...         0.0         0.0         1.0
+835        0.5       1.0       1.0  ...         0.5         0.0         0.5
+1653       0.5       0.5       0.0  ...         0.5         0.0         1.0
+2607       1.0       0.5       0.0  ...         0.0         0.5         0.0
+2732       0.5       0.5       0.5  ...         0.0         0.0         0.5
+
+[1500 rows x 10000 columns]
+y_train_new.shape: (1500,)
+
+X_val_new.shape: (1500, 10000)
+y_val_new.shape: (1500,)
+
+Data loaded successfully.
+
+Data loaded in 0.2509633183479309 mins
+Initializing Non Pruned Hub
+Non Pruned Hub Initialized
+
+Initializing SnpHub
+Bin Hub Initialized
+SNP Hub Initialized
+Hubs done in 0.0057604471842447914 mins
+Initializing population...
+(ray_uni_eval_classification pid=33986) 0.00030774353834495116 , 20.7910966
+(ray_uni_eval_classification pid=33986) 0.0008316741972423936 , 20.7910966
+(ray_uni_eval_classification pid=33986) 0.0007171251202995332 , 20.7910966
+(ray_uni_eval_classification pid=33987) 0.0003333808501834734 , 13.5836129 [repeated 59x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)
+(ray_uni_eval_classification pid=33987) 0.00012831266478008363 , 5.8854829 [repeated 73x across cluster]
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986) 9.1167502
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.0005266649385854971 , 9.5175502 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001297633393619324 , 2.6012882 [repeated 79x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010020470118199398 , 12.6885443 [repeated 41x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010184767172105591 , 18.4175919 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0011989767473988833 
+(ray_uni_eval_classification pid=33986) 0.0006769476971652533 , 9.1664429 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0007998185825824899 , 1.3748390 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00017957620133224328 , 12.4623984 [repeated 23x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004237500238485903 , 18.5934115 [repeated 31x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0004468945342208097 , 1.1817679 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00040672871047281456 , 9.230414 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00027638589338957464 , 16.3879728 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00019803786056610262 , 7.2466960 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0005044112204467543 , 18.1708892 [repeated 29x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00024912544838423534
+(ray_uni_eval_classification pid=33987)  
+(ray_uni_eval_classification pid=33987)  
+(ray_uni_eval_classification pid=33987) 11.7223776
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33987) 0.00014036898345243243 , 6.6873507 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0002085530474395525 , 14.9979876 [repeated 32x across cluster]
+(ray_uni_eval_classification pid=33986) 0.000762094008271208 , 2.4574635 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00046855821562252764 , 12.3002061 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00015268627097630993 , 7.6984894 [repeated 37x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005061383917744355 , 18.1526008 [repeated 65x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00018137860180866827 , 8.3708000 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33987)  
+(ray_uni_eval_classification pid=33987) 19.2393330
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33986) 0.00027945877613611003 , 10.3588643 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00024272464193314525 , 6.7467608 [repeated 62x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00028446756718969457 , 2.1337679 [repeated 51x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00024963120788756843 , 5.1717637 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00025722154062879365 , 10.9509901 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00021101002528023383 , 17.8981250 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0006022406714180639 , 6.597983 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00016504541263040462 , 4.5961487 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00017897149541035162 , 9.8601515 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005850068485278026 , 9.8813879 [repeated 63x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00029625803203797707 , 2.146714 [repeated 36x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0006730174720064874 , 11.9033390 [repeated 38x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00019034987869653852 , 13.1037124 [repeated 33x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0006869668457862299 , 17.9416434 [repeated 38x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002986404399468734 , 7.3510573 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004065825757210706 , 4.2339907 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010014982782807769 , 8.1818239 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000670523814843671 , 13.7902826 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0002900741581349231 , 10.1824442 [repeated 69x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003264892082986415 , 6.9325532 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0008098032522456666 , 8.4359975 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00019055311119442475 , 7.3644203 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0011640149799630461 , 14.4707356 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0006831017157908348 , 1.6975272 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00014041122589097954 , 18.9088484 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00032388952418799244 , 15.5343307 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00021634822551630517 , 16.3041326 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0002843928296145659 , 2.9777570 [repeated 38x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005718246937609361 , 9.1750028 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0004940313962501497 , 7.1264636 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005361302429564563 , 15.4819213 [repeated 36x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0009017394147055047 , 12.7788658 [repeated 43x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00016027010403618647 , 2.3850847 [repeated 24x across cluster]
+(ray_uni_eval_classification pid=33986) 12.7947053
+(ray_uni_eval_classification pid=33987) 0.000560260704462856 , 19.8743901 [repeated 39x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00017183649909646714 , 1.730669 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002061881017949574 , 20.2539887 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00041526614055970024 , 14.7377088 [repeated 41x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005429155111690287 , 18.3109817 [repeated 41x across cluster]
+(ray_uni_eval_classification pid=33986) 0.000846460789673209 , 9.2199937 [repeated 32x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00011125708048975724 , 1.8123895 [repeated 43x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00033589268977290976 , 18.6722896 [repeated 32x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005935875930821455 , 11.7845378 [repeated 39x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002719796820328524 , 12.4456493 [repeated 42x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005230339869574108 , 19.8203650 [repeated 29x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00023122055877472514 , 16.3788525 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001395137366964061 , 13.1460063 [repeated 45x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00016272376498571717 , 20.5663860 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00019841734062647776 , 3.9535244 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001868357431728529 , 8.8867855 [repeated 63x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00014082029527512363 , 20.9857079 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00041003612393281097 , 3.8576021 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33986) 8.2758263
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.0001156875621282083 , 14.6871982 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0003703537168687765 , 5.7972056 [repeated 71x across cluster]
+(ray_uni_eval_classification pid=33987) 7.683531
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33987) 0.00013617665753368202 , 3.2063268 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33986) 10.2854143
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.00011782184672742835 , 3.4224054 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0011984333354737586 
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986) 9.6750903
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.00020507903667188465 , 6.6359717 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001328869308918068 , 9.6094650 [repeated 51x across cluster]
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986) 9.7126526
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.00012690562375233805 , 3.9568607 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00018292243002487885 , 5.7710551 [repeated 77x across cluster]
+(ray_uni_eval_classification pid=33987) 6.2071224
+(ray_uni_eval_classification pid=33986) 0.0009320728247353971 , 19.5000687 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0010570931672361228 , 19.8556726 [repeated 51x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0010046860645498978 , 16.7822806 [repeated 70x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0009952050011410862 , 4.8710611 [repeated 68x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00035272204282110753 , 3.1671646 [repeated 74x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0002450645569681553 , 15.7988084 [repeated 70x across cluster]
+(ray_uni_eval_classification pid=33986) 0.001009235911296813 , 6.4846942 [repeated 69x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002020652197031736 , 6.7984190 [repeated 45x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00016779931990196228 , 7.2241795 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010353566643661605 , 6.3115173 [repeated 72x across cluster]
+(ray_uni_eval_classification pid=33986) 0.000376420604544514 , 6.9415419 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0005700564927638707 , 20.7249900 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0002090879109375443 , 3.833928 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0007782694069179974 , 16.1535307 [repeated 75x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00017169240770442684 , 17.3202337 [repeated 63x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00017606366121536432 , 20.4063544 [repeated 42x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004444474582565583 , 18.9647089 [repeated 72x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000758623117108892 , 3.1996560 [repeated 43x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0007445550058370332 , 2.8281241 [repeated 67x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001724023462960078 , 7.4265742 [repeated 62x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0007667722780304587 , 6.9156748 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003184187141046513 , 14.9421574 [repeated 68x across cluster]
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33986) 0.0004072227117991045 , 8.188364 [repeated 41x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00016490581583344932 , 6.6156149 [repeated 63x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0007244035394247672 , 13.6442174 [repeated 77x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0008918154939254741 , 18.4365145 [repeated 74x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00012431073482088717 , 13.2498075 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00019583990498167614 , 16.8203703 [repeated 43x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00018222978889792518 , 1.7398161 [repeated 45x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005136981543312769 , 7.4180117 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33986) 6.2291292
+(ray_uni_eval_classification pid=33987) 0.0006180230708860424 , 8.5271566 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001286453327781767 , 2.1144493 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010442575148267297 , 1.7023411 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0006188400159573559 , 20.1857322 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00011283025457869966 , 6.4548549 [repeated 45x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001688734206896636 , 19.1619784 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002979852674683259 , 2.6557430 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002390328629653382 , 12.7701177 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000654234507389051 , 19.5896947 [repeated 62x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004458102630946481 , 20.6641637 [repeated 75x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00026586103533954297 , 16.7306676 [repeated 45x across cluster]
+(ray_uni_eval_classification pid=33986) 0.001780909567407507 , 17.2176608 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00022492240369864636 , 16.1648140 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00023032801236894107 , 1.4828509 [repeated 80x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00030585459455217956 , 9.9214082 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005096871559823191 , 16.3737795 [repeated 69x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004468186891529724 , 13.9964264 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005532023362584959 , 6.4301666 [repeated 72x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002591315559017371 , 8.389750 [repeated 68x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00024030578117389956 , 8.429789 [repeated 73x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0007689891025998152 , 4.7500744 [repeated 69x across cluster]
+(ray_uni_eval_classification pid=33987) 0.001213862218222228 , 15.7451496 [repeated 45x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00032593910347389343 , 4.1835542 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0016179802132537668 , 14.7669192 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00014622220134064 , 4.5229595 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00015369196432951648 , 1.2079497 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001042771343646165 , 11.8349378 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33986) 11.9925440
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.000293739742709187 , 3.5618442 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00021799351231122088
+(ray_uni_eval_classification pid=33987)  
+(ray_uni_eval_classification pid=33987)  
+(ray_uni_eval_classification pid=33987) 14.6445470
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33987) 0.00015518465168301576 , 5.4161685 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002373687581623818 , 10.426273 [repeated 39x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00031373792897942954 , 6.5416614 [repeated 68x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0006604706586123554 , 10.9361545 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00015939160457995039 , 6.5179428 [repeated 62x across cluster]
+(ray_uni_eval_classification pid=33987)  
+(ray_uni_eval_classification pid=33987) 2.6371600
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33986) 0.001069306620192445 , 8.1728752 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0003690532508762723
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986) 20.1800314
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.00023342501707535046 , 19.7862020 [repeated 39x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00013338756777370175 , 19.6614358 [repeated 63x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00021595476487401566 , 15.2054391 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00015478381896527615 , 12.6098225 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00035404643351966136 , 6.6407525 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00020092362020224241 , 15.5439308 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001403944558976411 , 11.349122 [repeated 64x across cluster]
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33986) 0.00023875636505771292 , 16.4681004 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002721482376450979 , 6.6810507 [repeated 77x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0019215156748079165 , 13.120417 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.0007540949009877673 , 4.3324083 [repeated 76x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00018281549008436482 , 16.2921270 [repeated 67x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00013258167687923983 , 12.4467666 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0010437124531890718 , 14.4738033 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004717797164465187 , 3.6549393 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00024054061131761895 , 12.4026361 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003480076768416218 , 1.8680884 [repeated 70x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00021476266026076996 , 3.9167077 [repeated 70x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0006450035613871363 , 4.1978464 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00016126070663752268 , 10.4737058 [repeated 40x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003074788848322907 , 2.4903263 [repeated 78x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00018331391468395797 , 8.5846817 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00019498062606115862 , 14.9276429 [repeated 63x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00040542182822228545 , 15.4296467 [repeated 79x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00031910005514690365 , 9.7734622 [repeated 62x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0002657264888340505 , 3.5683366 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0010535277867749215 , 3.9735069 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00012170562689595155 , 5.4853384 [repeated 72x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0009679089465777224 , 15.9141273 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00018091488893151597 , 12.9210187 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00038001274570570454 , 2.6101800 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00014297150556313865 , 6.2783325 [repeated 45x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00015155327083937742 , 20.5588434 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001394732743054128 , 1.5302064 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00010198901279678818 , 1.9374435 [repeated 47x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0008711527509130956 , 16.8661909 [repeated 72x across cluster]
+(ray_uni_eval_classification pid=33986) 0.000644366443075417 , 8.9265244 [repeated 67x across cluster]
+(ray_uni_eval_classification pid=33987) 0.001142748927131676 , 4.253962 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003718620579915566 , 11.2869046 [repeated 67x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00027978594056909944 , 10.468276 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001947034478902987 , 16.9052175 [repeated 38x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0005386893088376588 , 17.5365345 [repeated 62x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00010326567096863304 , 10.9343850 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00022609434634257575 , 14.3997505 [repeated 75x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004414639904524731 , 1.8907359 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0006203730841261024 , 6.3162083 [repeated 64x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0003921033642388938 , 14.7100424 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00012792349697898775 , 10.9566141 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00041505946265724125 , 20.9452983 [repeated 43x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00016990919948323135 , 10.3578292 [repeated 62x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00015883002033439952 , 8.6653881 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004422715908053987 , 12.5157595 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00018908030926062525 , 10.6527910 [repeated 70x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00024623435841159 , 13.1896772 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001845363725391791 , 11.1765583 [repeated 64x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0011626677533529417 , 4.9066247 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33987) 0.001094634404771977 , 9.9791927 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00027068906884725186 , 18.5864038 [repeated 51x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0004983905774173514 , 20.625230 [repeated 39x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001185746359754769 , 14.750413 [repeated 69x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0010561773400432073
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986) 3.2016321
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.0001951415420416991 , 9.3238385 [repeated 62x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000154918752586497 , 14.3748279 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005313293269644803 , 13.6942398 [repeated 64x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00010811136862320936 , 19.5659038 [repeated 51x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005231630953095867 , 15.6564444 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001357821540151627 , 9.9618759 [repeated 73x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00020608406574562643 , 15.4607542 [repeated 37x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003452936425218378 , 7.9570805 [repeated 51x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004582621512823071 , 15.2471448 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33986) 1.925950
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.0009554221197546342 , 7.5127000 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00010079473078888901 , 10.6307103 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0010290705194389571 , 19.6802837 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.0001322556570911848 , 20.3108028 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00013460998677816693 , 14.3661818 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00015858307195293353 , 13.6928747 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00026818850690568663 , 9.8326675 [repeated 64x across cluster]
+(ray_uni_eval_classification pid=33987) 0.001108481160436936 , 13.8460795 [repeated 62x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00011003878653831345 , 19.7914565 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00019762012967677878 , 7.2375439 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00021602420348199036 , 11.4402665 [repeated 71x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0004032688827376174 , 15.6072046 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0015697682150255243 , 11.7472655 [repeated 63x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0027922149612455427 , 3.1629693 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00014146645747165065 , 13.8670481 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0009444852919406332 , 2.4767318 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00016581326572234767 , 19.8132903 [repeated 73x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0007128666813723816 , 17.180056 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005187229395436366
+(ray_uni_eval_classification pid=33987)  
+(ray_uni_eval_classification pid=33987)  
+(ray_uni_eval_classification pid=33987) 17.180056
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33986) 0.0018922267763216705 , 19.2753777 [repeated 77x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005984113797708468 , 6.1319089 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0028454378124672663 , 16.7315663 [repeated 71x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0006089639461658858 , 12.1667648 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002349165352301119 
+(ray_uni_eval_classification pid=33987)  
+(ray_uni_eval_classification pid=33987) 10.1045944
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33987) 0.0005198781544976661 , 11.4643891 [repeated 64x across cluster]
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986) 2.3773003
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.00027650685975916245 , 12.8078998 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0006399571115341396 , 2.7238249 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00023344321617124741 , 8.5627827 [repeated 63x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00018231243035132794 , 10.4956684 [repeated 47x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0018689820589211092 , 3.6780767 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000440951325178518 , 11.519565 [repeated 86x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004086297133301109 , 1.3338630 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0012257370022496494 , 2.9556136 [repeated 73x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00029501335375781146 , 12.8013085 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00022344860830603164 , 20.4061216 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00015482336221644966 , 14.3591657 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0005314869739861394 , 14.6409864 [repeated 67x across cluster]
+(ray_uni_eval_classification pid=33986) 0.000755666547014533 , 9.5363749 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00024151387889020937 , 20.6938113 [repeated 43x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0010914963276446032 , 17.703577 [repeated 24x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00025065024221077037 , 19.1257163 [repeated 51x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001590215015531138 , 19.1499292 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002917317837657918 , 6.4604061 [repeated 42x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0007073912671947125 , 7.7974203 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0008806500383998772 , 1.122429 [repeated 38x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004765277339332519 , 17.6539181 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0012100788576847044 , 8.6765140 [repeated 77x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000289107092018126 , 6.3311045 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0014686244099139656 , 9.4586004 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0003238621729134139 , 4.6694480 [repeated 67x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010857043034057101 , 16.9601861 [repeated 72x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001554273844986409 , 14.4333942 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00014178957120264402 , 3.8529549 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00012777029969279763 , 2.6545267 [repeated 64x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00018365223339122938 , 14.7358988 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00033186630890086333 , 2.9393656 [repeated 74x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00012618699332572758 , 9.518820 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001652730021056148 , 2.2989389 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0002592366388765588 , 10.7129812 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0009463751521941455 , 8.6459287 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003345874921029113 , 10.4914032 [repeated 47x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003535651275853313 , 19.4613155 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005545617745533749 , 9.7985555 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00011244441982355413 , 11.2221212 [repeated 51x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001084472928654101 , 14.6212943 [repeated 40x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0006012422364520265 , 12.8061384 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33986) 0.000313776664716936 , 1.8357639 [repeated 43x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00012869104745688587 , 3.6967689 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00017267913681701108 , 17.4876670 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00011033367773588543 , 5.6740919 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010402329191971926 , 20.8512047 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0015161937734797792 , 15.1629617 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00022710821700300254 , 12.7553836 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0005175212101560245 , 1.9236852 [repeated 70x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003170003275866917 , 18.7614533 [repeated 70x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0006872707917819354 , 9.6183771 [repeated 73x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00028562494751299683 , 16.1258611 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00012921884650846094 , 1.8616834 [repeated 71x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010925838323988524 , 10.2863049 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00036283538333686804 , 9.6994305 [repeated 68x across cluster]
+(ray_uni_eval_classification pid=33987) 1.7753352
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33987) 0.0003263585647327316 , 5.1573604 [repeated 76x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001548768454744942 , 12.8520647 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0028850903109760573 , 8.8995122 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00021276457264862714 , 3.6378394 [repeated 64x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000734115404660951 , 14.9316791 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002418922723633199 , 12.4255666 [repeated 65x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001315147588459853 , 3.9290444 [repeated 62x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002172876628139253 , 15.2772500 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0014179628246083764 , 19.1931355 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0004603849475869892 , 20.2832133 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00011965725642537617 , 15.348308 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00019700707239417303 , 7.2385136 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00024757033700162356 , 9.5261961 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00023002265548816014 , 4.3267372 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0006548289060589463 , 6.8316089 [repeated 64x across cluster]
+(ray_uni_eval_classification pid=33987) 0.001048452390665422 , 4.8694897 [repeated 73x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0008765735305119038 , 14.1461816 [repeated 70x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00043749639044504685 , 17.9332934 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004526001567029536 , 16.7867386 [repeated 43x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00021779544376843152 , 12.3634055 [repeated 67x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004924159944823536 , 19.5744506 [repeated 76x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00022047531438429413 , 6.146524 [repeated 71x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00013770064758672484
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33987) 0.0008856069146659928 , 12.8302636 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00039863736377915293 , 12.4825278 [repeated 83x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00016106599230264473 , 3.4027027 [repeated 69x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0002778509785748007 , 13.8973253 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0006782324197304179 , 14.7992996 [repeated 47x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00013449342304827638 , 14.6973568 [repeated 40x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0002947617786581147 , 1.3055458 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00012976163249922568 , 12.6461882 [repeated 41x across cluster]
+(ray_uni_eval_classification pid=33987) 0.002590270293217345 , 11.8297494 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00014845984045780414 , 9.2146771 [repeated 45x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001869825306657913 , 18.1027166 [repeated 34x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00020416500046521735 , 18.5584531 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00012098501336804679 , 5.1360738 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00045003418283495744 , 17.6886838 [repeated 72x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0007988832570856585 , 4.3275287 [repeated 31x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001109226432913224 , 11.6672899 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001304253548687906 , 17.3537018 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00045735391676499093 , 8.5993603 [repeated 31x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001537041251777338 
+(ray_uni_eval_classification pid=33987)  
+(ray_uni_eval_classification pid=33987) 7.5807729
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33987) 0.00076108725180285 , 8.5342470 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 17.5144368
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33986) 0.0014811326282800907 , 16.2081151 [repeated 85x across cluster]
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986) 12.3077663
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.0002371957589092366 , 5.3712510 [repeated 51x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00010996741172969449 , 1.124361 [repeated 65x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002330207050540989 , 16.328774 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003874328898836321 , 4.8245883 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001244229228717919 , 3.9715536 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00015005694575531692 , 19.9111262 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0010784583692791672 , 6.4817977 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00014908533643748223 , 12.2609449 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00018530984032943953 , 2.2480923 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00035552972738694955 , 3.5106364 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00036699250273730666 , 8.2601829 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005874550628288122 , 17.8980769 [repeated 39x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00021217203399631623 , 10.8705820 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33986) 4.3950492
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.0013642395292657317 , 12.1550864 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005995261663768736 , 4.3919061 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005428554355677573 , 11.7859872 [repeated 63x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00012038306115103037 , 4.6159477 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005514809268052923 , 20.461076 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0007572800938345225 , 1.1296639 [repeated 70x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003516000156775778 , 12.2122758 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003262645800289343 , 11.1976410 [repeated 45x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00022529943035903832 , 2.3944181 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00011848121524837829 , 14.3966940 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00023722220647448555 , 15.9603430 [repeated 63x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0009819398843753935 , 8.4962866 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00012909007175082587 , 9.7123269 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001048253780908115 , 7.8772844 [repeated 70x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0007625344036297221 , 6.3261751 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00044189321651649793 , 11.2320738 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00016661717241450713 , 11.9226966 [repeated 67x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0010045317496664707 , 1.8508914 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00042831568588086455 , 16.5949369 [repeated 26x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001464047213394215 , 5.3586225 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0007244558885413643 , 19.5436084 [repeated 42x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00042844973495331784 , 11.4662286 [repeated 68x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0002494017076749011 , 7.7722179 [repeated 41x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004623860585056261 , 4.8308178 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00044988187418532055 , 7.1193185 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0009384704223783791 , 6.1222074 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00036761523152534226 , 17.3832077 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33986) 0.0002723928332266645 , 16.9518066 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00098958070023214 , 19.1106484 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00012850930757279944 , 12.9503378 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010430552124351955 , 16.647659 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986) 13.1980981
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33986) 0.00012712468979275693 , 14.8613012 [repeated 40x across cluster]
+(ray_uni_eval_classification pid=33987) 0.001382658446964835 , 10.7287105 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0003012628572084397 , 15.738367 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001432076534551019 , 20.2569012 [repeated 43x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004390718748663036 , 11.6489143 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003741708085358564 , 10.7548471 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33986) 0.0004006280616016822 , 16.908628 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00011294628930363926 , 6.9251937 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00046067593329618406 , 6.8539548 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00032007001821021674 , 4.6868345 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00016034072476756034 , 12.4839279 [repeated 38x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00012136143113544717 , 19.3212705 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00016506788712311593 , 15.5352822 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005988716641400216 , 12.2682960 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0004394672884473483 , 4.9594418 [repeated 63x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00028895254370109313 , 10.8695308 [repeated 65x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00028804813180993705 , 16.8647616 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00012505526162526204 , 11.8046526 [repeated 51x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010694896123852882 , 15.4358668 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00012643038064835688 , 16.8867180 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001521424301029195 , 3.5220322 [repeated 43x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00012509974716168326 , 14.6234364 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986) 9.2072920
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.00019829895546447096 , 14.3620141 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00019284172756139917 , 1.3260776 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0007638883829249044 , 7.8036850 [repeated 64x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001544544209413079 , 4.9148847 [repeated 42x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0008478476882868846 , 9.3408436 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0003000010390338814 , 19.6429973 [repeated 39x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001298489673765002 , 17.5036008 [repeated 47x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0008933920306333776 , 10.7172785 [repeated 62x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00040989215362868814 , 16.5290208 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00047898029285703414 , 2.5679866 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00040019970796217885 , 20.1422479 [repeated 73x across cluster]
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33987) 0.0005294769035690816 , 13.4990991 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00032861274969342436 , 14.841147 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0007427310750421356 , 16.7264493 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000686641639224439 , 15.7005718 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.0012065630420937667 , 3.9695709 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00018350835805741594 , 5.5920159 [repeated 47x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00011411899382685053 , 10.3751260 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0007437173198575064 , 17.3091541 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00019176291302491766 , 6.5666107 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000964933596469042 , 5.3885477 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00036384457288940464 , 8.9663538 [repeated 88x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000755171584764569 , 4.4117686 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33986) 0.001597209594666582 , 4.9572201 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0007232268995074342 , 6.2324190 [repeated 81x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002985285657808312 , 1.6193675 [repeated 60x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00015655482964138656 , 9.4974457 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010128875581433272 , 3.2855914 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00023299692194600485 , 17.2775800 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0005346128867168565 , 13.3863045 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00033773834608952225 , 7.6557898 [repeated 41x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0007097903345094081 , 14.4953315 [repeated 45x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00011473698651276454 
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986) 4.6679439
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33986) 0.00018299480693945158 , 19.8424426 [repeated 66x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010222377646823544 , 13.8541434 [repeated 63x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00012285853924154377 , 16.1590196 [repeated 42x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00032347849699787545 , 19.4405066 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000293121026670895 , 17.5510437 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0002688567807027087 , 8.7698354 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00011659628397880928 , 18.7105687 [repeated 70x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00018587623288668365 , 9.8957227 [repeated 34x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005203653762778648 , 1.3257506 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001144558158944764 , 19.8484951 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0005925705420668503 , 11.3350437 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004865202211545294 , 2.6049814 [repeated 78x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000137750706882378 , 20.3327166 [repeated 33x across cluster]
+(ray_eval_pipeline_classification pid=33986) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=33986)   warnings.warn(
+(ray_eval_pipeline_classification pid=33986) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by LogisticRegression.
+(ray_eval_pipeline_classification pid=33986) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=33986)   warnings.warn(
+(ray_eval_pipeline_classification pid=33986) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by SGDClassifier.
+(ray_eval_pipeline_classification pid=33987) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=33987)   warnings.warn(
+(ray_eval_pipeline_classification pid=33987) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by LogisticRegression.
+(ray_eval_pipeline_classification pid=33987) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=33987)   warnings.warn(
+(ray_eval_pipeline_classification pid=33987) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by SGDClassifier.
+(ray_eval_pipeline_classification pid=33986) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by GradientBoostingClassifier.
+(ray_eval_pipeline_classification pid=33986) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=33986)   warnings.warn(
+(ray_eval_pipeline_classification pid=33986) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=33986)   warnings.warn(
+(ray_eval_pipeline_classification pid=33986) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by RandomForestClassifier.
+(ray_eval_pipeline_classification pid=33986) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=33986)   warnings.warn(
+(ray_eval_pipeline_classification pid=33986) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by RandomForestClassifier.
+(ray_eval_pipeline_classification pid=33986) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=33986)   warnings.warn(
+(ray_eval_pipeline_classification pid=33986) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by LogisticRegression.
+(ray_eval_pipeline_classification pid=33986) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=33986)   warnings.warn(
+(ray_eval_pipeline_classification pid=33986) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by SGDClassifier.
+(ray_eval_pipeline_classification pid=33986) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=33986)   warnings.warn(
+(ray_eval_pipeline_classification pid=33986) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by DecisionTreeClassifier.
+(ray_eval_pipeline_classification pid=33986) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=33986)   warnings.warn(
+(ray_eval_pipeline_classification pid=33986) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by GradientBoostingClassifier.
+(ray_eval_pipeline_classification pid=33987) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by DecisionTreeClassifier.
+(ray_eval_pipeline_classification pid=33987) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=33987)   warnings.warn(
+Population initialized in 0.8535417553451325 hours
+Entering evolutionary proccess.
+
+Generation: 0
+Population size: 76
+Size of Pareto Front: 4
+# of snps still considered (non_pruned + not_seen): 5240
+Proportion of seen SNPs: 87.11%
+Total mutations applied in reproduction: 11521
+(ray_uni_eval_classification pid=33987) 0.0004675182352666396 , 7.4999920 [repeated 19x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0004616056850066941 , 4.9664431 [repeated 71x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0005612085693762481 , 13.5542784 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00040505259008311034 , 8.2358011 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00017773709195562093 , 5.3213055 [repeated 51x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00023174518628404916 , 8.5417179 [repeated 51x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00010091399258937983
+(ray_uni_eval_classification pid=33986) 0.00012918358104546668 , 16.8729548 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0006788504172912102 , 19.966997 [repeated 45x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001208716709283908 , 20.7526187 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0006321765267345847 , 7.8683669 [repeated 50x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00021850066025480563 , 9.4470697 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002213459575834409 , 13.3634621 [repeated 68x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0003686383483271216 , 13.7601936 [repeated 47x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00021473983988218315 
+(ray_uni_eval_classification pid=33987) 0.0007905948460636414 , 16.6632785 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00020288233081805496 , 10.2761592 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0009582005702666874 , 17.9015128 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001157773649846372 , 9.6473784 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00016698974794482346 , 19.6664845 [repeated 61x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001163785166852227 , 13.3506847 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00036318247097943956 , 3.4645961 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0008646368327963061 , 6.4451026 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002645833837849332 , 20.4082776 [repeated 54x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0001965569535792855 , 12.3669904 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0005887893979152903 , 12.8808658 [repeated 31x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0005601665622310126 , 4.6029556 [repeated 38x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002577002205079726 , 10.6107944 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0007567397121631125 , 6.9128014 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00017736417618641198 , 5.4936200 [repeated 55x across cluster]
+(ray_uni_eval_classification pid=33986) 0.001472016353010308 , 12.2431024 [repeated 46x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00035626807734912 , 10.6336822 [repeated 36x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0009329229944454176 , 4.4460201 [repeated 39x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00082182026575911 , 14.792104 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00017356190832912288 , 15.4330785 [repeated 56x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0008026342447746693
+(ray_uni_eval_classification pid=33986)  
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33987) 0.0008436784190053448 , 15.4987288 [repeated 40x across cluster]
+(ray_uni_eval_classification pid=33987) 0.025012337083570868 , 13.9718374 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00011008749759378045 , 17.8916473 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00110891933839663 , 2.5239086 [repeated 65x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00011648679686127039 , 16.835251 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00021178906540481046 , 2.1862372 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33986) 0.000596724042848884 , 10.380393 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010348239135404835 , 11.3889168 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00039039671722490565 , 13.7669750 [repeated 52x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0004755383174713246 , 13.3616983 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010690294146892265 , 11.7518600 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33986) 
+(ray_uni_eval_classification pid=33986) 0.0009304950321842309 , 1.6886963 [repeated 41x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00011574434176248038 , 19.1498479 [repeated 39x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00038486666852344253 , 12.8018276 [repeated 38x across cluster]
+(ray_uni_eval_classification pid=33986) 0.004425790148597342 , 14.3055144 [repeated 40x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00020806947860640967 , 7.4830326 [repeated 44x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0006766408913366218 , 10.1772507 [repeated 47x across cluster]
+(ray_uni_eval_classification pid=33987) 0.000326451337386402 , 14.6665982 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33987) 
+(ray_uni_eval_classification pid=33987) 0.0003629746421693336 , 4.4096110 [repeated 62x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0004061684498511964 , 15.2630443 [repeated 65x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00010007860106803212 , 15.1776808 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0011140126195264277 , 14.3560667 [repeated 40x across cluster]
+Time to finish generation: 24.821432995796204 minutes
+
+Generation: 1
+Population size: 100
+Size of Pareto Front: 12
+# of snps still considered (non_pruned + not_seen): 3432
+Proportion of seen SNPs: 97.18%
+Total mutations applied in reproduction: 14551
+(ray_uni_eval_classification pid=33987) 0.0013035446459132016 , 1.2305324 [repeated 19x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0016488499558806047 , 4.6108410 [repeated 53x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00013391388269684557 , 1.9415401 [repeated 57x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00010673365223889952 , 4.7863234 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0006458134455573639 , 9.2134660 [repeated 43x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0002813900732687724 , 15.4675056 [repeated 86x across cluster]
+(ray_uni_eval_classification pid=33986) 0.0006122387556929954 , 18.7472251 [repeated 42x across cluster]
+(ray_uni_eval_classification pid=33987) 0.00010671729736239088 , 13.5106589 [repeated 59x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0006241684273800563 , 5.566460 [repeated 58x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0001628817017492179 , 14.9209313 [repeated 71x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00028166020292069716 , 20.4241846 [repeated 49x across cluster]
+(ray_uni_eval_classification pid=33987) 0.0007016601307682779 , 18.9899309 [repeated 47x across cluster]
+(ray_uni_eval_classification pid=33987) 0.001000970919425359 , 12.3288255 [repeated 48x across cluster]
+(ray_uni_eval_classification pid=33986) 0.00011195533073260489 , 14.4978695 [repeated 57x across cluster]
+Time to finish generation: 19.520342950026194 minutes
+
+Final run/population details
+Final population size: 100
+Size of Final Pareto Front: 13
+# of snps still considered (non_pruned + not_seen): 2654
+Proportion of seen SNPs: 99.82%
+Time to finish 2 generations: 95.58768470287323 minutes
+pareto front: [(0.03769351, 1), (0.06358675, 2), (0.06591785, 3), (0.13285379, 4), (0.16248117, 5), (0.16810687, 8), (0.17620961, 18), (0.20067848, 22), (0.23400472, 23), (0.2681596, 44), (0.26894104, 49), (0.28475153, 52), (0.2958966, 74)]
+Evolution done in 1.5938190141651367 hours
+Size of Pareto Front: 13
+All PFI values saved to all_pipelines_PFI_values.csv
+Post analysis done in 0.021054882208506265 hours
+Time taken: 1.6191526930862004 hours
+(ray_uni_eval_classification pid=33987) 0.00019604436013059834 , 3.1220113 [repeated 23x across cluster]
+(base) kia@Kias-MacBook-Air StarBASE-GP % 

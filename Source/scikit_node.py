@@ -19,6 +19,7 @@ from typing import Dict
 import pandas as pd
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
+import statsmodels.api as sm
 
 rng_t = np.random.Generator
 name_t = np.str_
@@ -532,7 +533,7 @@ class SequentialFeatureSelectorNode(ScikitNode, TransformerMixin):
 
 # CLASSIFICATION VERSION:
 # sequential feature selector, model = RandomForestClassifier
-class SequentialFeatureSelectorNode(ScikitNode, TransformerMixin):
+class SequentialFeatureSelectorNodeClassification(ScikitNode, TransformerMixin):
     def __init__(self,
                  rng_: rng_t,
                  seed: int = -1,
@@ -1410,7 +1411,7 @@ class DecisionTreeRegressorNode(ScikitNode, RegressorMixin):
 
 # CLASSIFICATION VERSION:
 # Decision tree classification
-class DecisionTreeClassiferNode(ScikitNode, ClassifierMixin):
+class DecisionTreeClassifierNode(ScikitNode, ClassifierMixin):
     def __init__(self,
                 rng_: rng_t,
                 seed: int = -1,
@@ -2129,7 +2130,7 @@ class LDSelector(ScikitNode, TransformerMixin):
                     if snp == peak_snp:
                         continue
                     X_full = pd.concat([X_peak, genotype_df_encoded[[snp]]], axis=1)
-                    # ADD BOOLEAN/IF CONDITION HERE
+                    # ADD IF CONDITION HERE
                     model = LinearRegression().fit(X_full, y)
                     beta = model.coef_[-1]
                     residuals = y - model.predict(X_full)
@@ -2140,6 +2141,288 @@ class LDSelector(ScikitNode, TransformerMixin):
                     p_val = 2 * (1 - stats.norm.cdf(abs(wald_stat)))
                     p_values.append(p_val)
                     tested_snps.append(snp)
+
+                if not p_values: # If no SNPs were tested, break the while loop
+                    break
+
+                p_values = np.array(p_values).flatten()
+                if len(p_values) == 1:
+                    rejected = [p_values[0] < 0.05]
+                else:
+                    rejected, _, _, _ = multipletests(p_values, alpha=0.05, method='fdr_bh')
+
+                to_remove = {s for s, r in zip(tested_snps, rejected) if not r} # if rejected is False, then we remove the SNP
+                for snp in snps_remaining_for_ca:
+                    if snp not in to_remove and snp != peak_snp:
+                        final_group_snps.append(snp)
+                        snp_details_after_ld[snp] = "Retained by CA"
+                # Add the peak SNP to the final group regardless of other SNPs
+                final_group_snps.append(peak_snp)
+                snp_details_after_ld[peak_snp] = "Peak SNP retained by CA"
+                
+                final_selected_snps.extend(final_group_snps) # final SNPs after LD pruning and CA added to the list
+
+        self.final_selected_snps = list(set(final_selected_snps))
+        self.name_of_selected_features = list(set(final_selected_snps))
+        self.ld_removed_snps = ld_removed_snps
+        self.ld_removed_details = ld_removed_details
+        self.bool_mask = genotype_df_original.columns.isin(self.final_selected_snps)
+        self.snp_details_after_ld = {snp: snp not in self.final_selected_snps for snp in genotype_df_original.columns}
+        self.selected_features_ = np.array(self.final_selected_snps)
+        return self
+
+    def transform(self, X):
+        """
+        Transform the data to include only the selected features.
+
+        Parameters:
+        - X (array-like): The input features (2D array of shape [n_samples, n_features]).
+
+        Returns:
+        - X_transformed (array-like): The transformed array with only selected features.
+        """
+        if self.selected_features_ is None:
+            raise RuntimeError("LDSelector has not been fitted yet.")
+        return X[:, self.bool_mask]
+
+    def mutate(self, rng: rng_t):
+        # shift is a rng from normal distribution with a change in 1st decimal place
+        shift = 0.05 * rng.choice([-1.0, 1.0])
+
+        # check if the threshold is going to be less than 0.1
+        if self.threshold + shift < np.float32(0.5):
+            self.threshold = np.float32(0.5)
+        # check if the threshold is going to be greater than 1
+        elif self.threshold + shift > np.float32(0.95):
+            self.threshold = np.float32(0.95)
+        # if neither of the above, then we can just add the shift
+        else:
+            self.threshold = self.threshold + shift
+
+        # increment genomic distance by 100000 with a minimum of 500000 and maximum of 1000000, in increments of 100000
+        genomic_distance_shift = np.int32(rng.choice([-100000, 100000]))
+        # check if the genomic_distance is going to be less than 500000
+        if self.genomic_distance + genomic_distance_shift < 500000:
+            self.genomic_distance = 500000
+        # check if the genomic_distance is going to be greater than 1000000
+        elif self.genomic_distance + genomic_distance_shift > 1000000:
+            self.genomic_distance = 1000000
+        # if neither of the above, then we can just add the shift
+        else:
+            self.genomic_distance = self.genomic_distance + genomic_distance_shift
+
+        # initialize the selector with the new threshold
+        self.params['threshold'] = np.float32(self.threshold)
+        self.params['genomic_distance'] = int(self.genomic_distance)
+        LDSelector(rng_= rng, params= self.params)
+
+    def get_feature_count(self):
+        """
+            Get the number of features selected by the selector.
+
+            Returns:
+            - int: The number of features selected. If the selector has not been fitted yet,
+           raises a RuntimeError.
+    """
+        if self.selected_features_ is None:
+            raise RuntimeError("LDSelector has not been fitted yet.")
+
+        return len(self.selected_features_)
+    
+@typechecked
+class LDSelectorClassification(ScikitNode, TransformerMixin):
+    def __init__(self,
+                    rng_: rng_t,
+                    seed: int = -1,
+                    params: Dict = {},
+                    name: name_t = name_t('LDSelectorClassification')
+                    ):
+            super().__init__(name)
+
+            rng = np.random.default_rng(rng_)
+
+            # if params is an empty dictionary, then we will initialize the params
+            if params == {}:
+                self.params = {'threshold': np.float32(rng.uniform(low=0.5, high=0.95)), 'genomic_distance': int(1000000)}
+            else:
+                # make sure params is correct
+                assert 'threshold' in params
+                assert len(params) == 2
+                assert isinstance(params['threshold'], np.float32)
+                assert isinstance(params['genomic_distance'], int)
+                self.params = params
+
+            self.threshold = self.params['threshold']
+            self.genomic_distance = self.params['genomic_distance']
+            self.seed = seed
+            self.params = params
+            self.selector = 'LDSelector'
+            self.selected_features_ = None
+            self.bool_mask = None
+            self.name_of_selected_features = None
+
+            # dictionary to store true or false to see if it was ld pruned or not
+            # {'snp_name': True/False}
+            self.snp_details_after_ld = None
+
+
+    
+    def fit(self, X_original, X_encoded, y, snp_r2_dict):
+        if X_original.empty:
+            self.selected_features_ = None
+            return self
+
+        # Function to calculate LD (R²) between two SNPs
+        def calculate_ld(X, snp1: np.str_, snp2: np.str_):
+            correlation = np.corrcoef(X[snp1], X[snp2])[0, 1]
+            r_squared = correlation ** 2
+            return r_squared
+
+        # Function to remove subset groups from a list of groups
+        def remove_subsets(groups):
+            unique_groups = []
+            for group in groups:
+                is_subset = False
+                for other_group in groups:
+                    if set(group).issubset(set(other_group)) and group != other_group:
+                        is_subset = True
+                        break
+                if not is_subset:
+                    unique_groups.append(group)
+            return unique_groups
+
+        ld_threshold = self.threshold
+        max_distance = self.genomic_distance
+        final_selected_snps = []
+        ld_removed_snps = set()
+        ld_removed_details = {}
+        snp_details_after_ld = {}
+
+        column_names = X_original.columns
+        chr, pos = [], []
+
+        for snp in column_names:
+            chr.append(int(snp.split('.')[0]))
+            pos.append(int(snp.split('.')[1]))
+
+        genotype_df_columns = pd.DataFrame({'chrom': chr, 'pos': pos, 'snp': column_names})
+        genotype_df_columns = genotype_df_columns.sort_values(['chrom', 'pos'])
+        sorted_snps = genotype_df_columns['snp'].tolist()
+        genotype_df_original = X_original[sorted_snps]
+        genotype_df_encoded = X_encoded[sorted_snps]
+        chromosomes = genotype_df_columns['chrom'].unique()
+
+        marginal_r2 = {snp: snp_r2_dict[snp] for snp in column_names}
+        for snp in column_names:
+            snp_details_after_ld[snp] = True
+
+        for chrom in chromosomes:
+            chr_snps_df = genotype_df_columns[genotype_df_columns['chrom'] == chrom]
+            chr_snps = chr_snps_df['snp'].tolist()
+
+            groups = []
+            current_group = [(chr_snps_df.iloc[0]['snp'], chr_snps_df.iloc[0]['pos'])]
+            
+            for i in range(1, len(chr_snps)):
+                curr_snp = (chr_snps_df.iloc[i]['snp'], chr_snps_df.iloc[i]['pos'])
+                prev_snp = (chr_snps_df.iloc[i - 1]['snp'], chr_snps_df.iloc[i - 1]['pos'])
+                if abs(curr_snp[1] - prev_snp[1]) <= max_distance:
+                    current_group.append(curr_snp)
+                else:
+                    groups.append(current_group)
+                    current_group = [curr_snp]
+            groups.append(current_group)
+
+            groups = remove_subsets(groups)
+            groups = [[snp[0] for snp in group] for group in groups]
+               
+            # LD Pruning and Conditional Analysis within each group
+            for group in groups:
+                #print(f"Processing group: {group}")
+                ld_removed_snps_in_group = set()
+                if len(group) == 1:
+                    snp = group[0]
+                    final_selected_snps.append(snp)
+                    snp_details_after_ld[snp] = "Single SNP in group, retained by default"
+                    continue
+                group_df = genotype_df_original[group]
+                snp_list = group_df.columns.tolist()
+
+                for i, snp1 in enumerate(snp_list):
+                    if snp1 in ld_removed_snps:
+                        continue
+                    for j in range(i + 1, len(snp_list)):
+                        snp2 = snp_list[j]
+                        if snp2 in ld_removed_snps:
+                            continue
+                        ld_value = calculate_ld(genotype_df_original, snp1, snp2)
+                        if ld_value > ld_threshold:
+                            if marginal_r2[snp1] > marginal_r2[snp2]:
+                                ld_removed_snps.add(snp2)
+                                ld_removed_snps_in_group.add(snp2)
+                                ld_removed_details[snp2] = f"Removed due to high LD (R²={ld_value:.3f}) with {snp1}"
+                            else:
+                                ld_removed_snps.add(snp1)
+                                ld_removed_snps_in_group.add(snp1)
+                                ld_removed_details[snp1] = f"Removed due to high LD (R²={ld_value:.3f}) with {snp2}"
+                
+                non_pruned_snps_in_group = [s for s in snp_list if s not in ld_removed_snps_in_group] # remaining SNPs after LD pruning
+
+                if len(non_pruned_snps_in_group) == 0:
+                    continue
+                if len(non_pruned_snps_in_group) == 1:
+                    snp = non_pruned_snps_in_group[0]
+                    final_selected_snps.append(snp)
+                    snp_details_after_ld[snp] = "Single SNP after LD pruning, retained by default"
+
+                    continue
+                
+                # Start Conditional Analysis
+                #print(f"Performing Conditional Analysis on group: {non_pruned_snps_in_group}")
+                snps_remaining_for_ca = non_pruned_snps_in_group[:]
+                final_group_snps = []
+
+                
+                if len(snps_remaining_for_ca) < 2:
+                    final_group_snps.extend(snps_remaining_for_ca)
+                    final_selected_snps.extend(final_group_snps)
+                    for s in snps_remaining_for_ca:
+                        snp_details_after_ld[s] = "Retained by CA due to lack of more SNPs"
+                    # move to next group
+                    continue
+                    
+                peak_snp = max(snps_remaining_for_ca, key=lambda x: marginal_r2[x])
+                X_peak = genotype_df_encoded[[peak_snp]]
+                p_values = []
+                tested_snps = []
+
+                for snp in snps_remaining_for_ca:
+                    if snp == peak_snp:
+                        continue
+                    
+                    # For classification, do LogisticRegression
+                    # 1. build design matrix
+                    X_full = pd.concat([X_peak, genotype_df_encoded[[snp]]], axis=1)
+                    X_full = sm.add_constant(X_full)            # adds intercept column
+
+                    # NEW: try/except clause to prevent Logit crashing due to perfect multicollinearity or a feature perfectly predicting a class
+                    try:
+                        # 2. fit logit model (y must be 0/1 integers)
+                        res = sm.Logit(y, X_full).fit(disp=0)
+
+                        # 3. pull coefficient and its SE for the SNP of interest
+                        beta     = res.params[-1]                   # last column = current SNP
+                        std_err  = res.bse[-1]
+
+                        # 4. Wald statistic and two‑sided p‑value
+                        wald_stat = beta / std_err
+                        p_val     = 2 * (1 - stats.norm.cdf(abs(wald_stat)))
+
+                        p_values.append(p_val)
+                        tested_snps.append(snp)
+                    except Exception as e:
+                        # in the case of perfect multicollinearity/perfect separability bc a feature predicts class
+                        continue
 
                 if not p_values: # If no SNPs were tested, break the while loop
                     break

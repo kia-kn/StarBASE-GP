@@ -14,7 +14,7 @@
 
 
 from typing import List, Set
-from .scikit_node import ScikitNode, LDSelector
+from .scikit_node import ScikitNode, LDSelector, LDSelectorClassification
 import numpy as np
 from typeguard import typechecked
 import copy as cp
@@ -30,9 +30,10 @@ feature_name_t = Set
 @typechecked
 class Pipeline:
     # initialize the pipeline with a set of univariate snps, an LD node, a selector node and a root node
+    # NEW: LDSelector or LDSelectorClassification
     def __init__(self,
                  uni_snps: uni_snps_t,
-                 ld_node: LDSelector,
+                 ld_node: LDSelector | LDSelectorClassification,
                  selector_node: ScikitNode,
                  root_node: ScikitNode) -> None:
 
@@ -108,7 +109,7 @@ class Pipeline:
         return self.root_node
 
     # print the pipeline
-    def print_pipeline(self) -> None:
+    def print_pipeline(self, problem_type: str) -> None:
         print("Pipeline:")
         print('Traits:', self.traits)
         print("SNP set:")
@@ -120,7 +121,11 @@ class Pipeline:
         print("Selector Node:")
         print(self.selector_node.selector)
         print("Root Node:")
-        print(self.root_node.regressor)
+        # NEW: if/elif condition to distinguish between regressor and classifier
+        if problem_type == "regression":
+            print(self.root_node.regressor)
+        elif problem_type == "classification":
+            print(self.root_node.classifier)
         return
 
     # call the LD nodes mutation functions to mutate the LD node

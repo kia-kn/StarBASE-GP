@@ -18,15 +18,15 @@ from sklearn.model_selection import train_test_split
 from .snp_hub import SnpHub
 from typing import List, Tuple, Set
 import copy as cp
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, make_scorer
 
 from .uni_node import UniNode
 from .uni_node import UniAdditiveNode, UniDominantNode, UniRecessiveNode, UniHeterosisNode, UniUnderDominantNode, UniOverDominantNode, UniSubAdditiveNode, UniSuperAdditiveNode, UniPAGERNode
 
-from .scikit_node import ScikitNode, LDSelector
+from .scikit_node import ScikitNode, LDSelector, LDSelectorClassification
 from sklearn.pipeline import Pipeline as SklearnPipeline
 from sklearn.pipeline import FeatureUnion
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from .reproduction import Reproduction
 import numpy.typing as npt
 from . import nsga_tool as nsga
@@ -118,6 +118,68 @@ def ray_uni_eval(x_train,
 
     return r2_t(best_res), nodelo_t(best_uni), snp_name
 
+# evaluate unseen snps
+# NEW: classification version
+@ray.remote
+def ray_uni_eval_classification(x_train,
+                y_train,
+                x_val,
+                y_val,
+                snp_name: snp_name_t,
+                snp_pos: snp_hub_pos_t) -> Tuple[np.float32, np.str_, np.str_]:
+    # hold results
+    best_uni = ''
+    best_res = -1.0
+
+    # holds all lo's we are going to evaluate
+    # NEW: commented out UniPAGERNode for classification
+    unis = {np.str_('additive'): UniAdditiveNode,
+            np.str_('dominant'): UniDominantNode,
+            np.str_('recessive'): UniRecessiveNode,
+            np.str_('heterosis'): UniHeterosisNode,
+            np.str_('underdominant'): UniUnderDominantNode,
+            np.str_('overdominant'): UniOverDominantNode,
+            np.str_('subadd'): UniSubAdditiveNode,
+            np.str_('superadd'): UniSuperAdditiveNode,
+            # np.str_('pager'): UniPAGERNode,
+            }
+
+    # iterate over the uni node types and create sklearn pipeline
+    for lo, uni in unis.items():
+        steps = []
+        # create the epi node
+        uni_node = uni(name=lo, snp_name=snp_name, snp_pos=snp_pos)
+        steps.append((lo, uni_node))
+
+        # add logistic regressor
+        steps.append(('regressor', LogisticRegression()))
+
+        # create the pipeline
+        skl_pipeline = SklearnPipeline(steps=steps)
+
+        # fit the pipeline with the lo and the regressor
+        skl_pipeline_fitted = skl_pipeline.fit(x_train, y_train)
+
+        # NEW: get Tjur R2
+        # r2 = skl_pipeline_fitted.score(x_val, y_val)
+        def tjur_r2(estimator, X, y): 
+            proba_pos = estimator.predict_proba(X)[:, 1] 
+            y = np.asarray(y) 
+            return proba_pos[y == 1].mean() - proba_pos[y == 0].mean()
+        
+        r2 = tjur_r2(skl_pipeline_fitted, x_val, y_val)
+
+        # # *** just for debugging
+        # if r2 > 0.0001:
+        #     print(r2, ",", snp_name)
+
+        # check if this is the best lo
+        if r2 > best_res:
+            best_res = r2
+            best_uni = lo
+
+    return r2_t(best_res), nodelo_t(best_uni), snp_name
+
 @ray.remote
 # all univariate snps/nodes with their best lo goes to the LD operator, then the feature selector and finally the regressor
 def ray_eval_pipeline(x_train,
@@ -192,6 +254,102 @@ def ray_eval_pipeline(x_train,
 
     try:
         r2_score = pipeline.score(x_val_transformed_df, y_val)
+        feature_count = pipeline.named_steps['selector'].get_feature_count() # number of selected features after the selector node
+        features_final = (pipeline.named_steps['selector'].get_feature_names(selected_features_after_ld)) # get the names of the features after the selector node by sending the selected features after the LD node
+        # if features_final is not a list, convert it to a list
+        if not isinstance(features_final, list):
+            features_final = features_final.tolist()
+    except Exception as e:
+        logging.error(f"Error while scoring or getting feature count: {e}")
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], []
+
+    # return the pipeline
+    return r2_t(r2_score), feature_cnt_t(feature_count), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], features_final
+
+@ray.remote
+# all univariate snps/nodes with their best lo goes to the LD operator, then the feature selector and finally the classifier
+# NEW: added LDSelectorClassification instead of LDSelector
+def ray_eval_pipeline_classification(x_train,
+                      y_train,
+                      x_val,
+                      y_val,
+                      uni_nodes: uni_node_list_t,
+                      selector_node: ScikitNode,
+                      ld_node: LDSelectorClassification,
+                      root_node: ScikitNode,
+                      pop_id: np.int16,        #    r2, feature count, pop_id, pruned, snp_name_after_ld
+                      snp_r2_set: Set) -> Tuple[np.float32, np.uint16, np.int16, List[np.str_], List[np.str_]]:
+
+    # make dictionary to hold the snp r2 scores
+    snp_r2_dict = {p[0]: p[1] for p in snp_r2_set}
+
+    # create the pipeline to combine all the univariate snps
+    steps = []
+    # uni nodes into one sklearn union
+    steps.append(('snp_union', FeatureUnion([(uni_node.name, uni_node) for uni_node in uni_nodes])))
+    # make a list of uni node names
+    uni_node_names = [uni_node.get_snp_name() for uni_node in uni_nodes]
+
+    # create and fit the pipeline to get the union of all the univariate snps
+    pipeline = SklearnPipeline(steps=steps)
+    try:
+        pipeline_fitted = pipeline.fit(x_train, y_train)
+    except Exception as e:
+        # Catch all other exceptions and log error with relevant context
+        logging.error(f"Exception while fitting SNP union step: {e}")
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
+
+    # use the transform function get the best lo encoded snps for both training and testing dataset
+    x_train_transformed = pipeline_fitted.transform(x_train)
+    x_val_transformed = pipeline_fitted.transform(x_val)
+    # create dataframes to hold the transformed data
+    x_train_transformed_df = pd.DataFrame(x_train_transformed, columns=uni_node_names)
+    x_val_transformed_df = pd.DataFrame(x_val_transformed, columns=uni_node_names)
+    if x_train_transformed_df.empty:
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
+
+    x_train_original_df = pd.DataFrame(x_train, columns=uni_node_names)
+
+    # fit the LD node - send the unencoded snps for pearson's correlation calculation, the encoded data, the target and the snp r2 dictionary having the best lo r2
+    try:
+        ld_node.fit(x_train_original_df, x_train_transformed_df, y_train, snp_r2_dict)
+        selected_features_after_ld = ld_node.selected_features_
+        # keeping only the selected features (not pruned out by LD) after the LD node
+        x_train_transformed_df = pd.DataFrame(x_train_transformed_df[selected_features_after_ld], columns=selected_features_after_ld)
+        if x_train_transformed_df.empty:
+            print("No features selected after LD node")
+            return r2_t(-1.0), feature_cnt_t(0), pop_id, False, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], [] # all SNPs in the pipeline were pruned out by LD, should not be happening but just a check
+        x_val_transformed_df = pd.DataFrame(x_val_transformed_df[selected_features_after_ld], columns=selected_features_after_ld)
+    except Exception as e:
+        logging.error(f"Exception while fitting LD node: {e}")
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
+
+    # adding the selector and regressor nodes
+    try:
+        # create the pipeline
+        steps = []
+        # add the selector node
+        steps.append(('selector', selector_node))
+        # pass to regressor
+        steps.append(('classifier', root_node.classifier))
+        # create the pipeline without refitting the regressor
+        pipeline = SklearnPipeline(steps=steps)
+        pipeline.fit(x_train_transformed_df, y_train)
+    except Exception as e:
+        logging.error(f"Exception while fitting pipeline after LD: {e}")
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], [] # pipeline fails but still update the hub with LD node results
+
+    try:
+        # r2_score = pipeline.score(x_val_transformed_df, y_val)
+        # NEW: Tjur R2
+        def tjur_r2(estimator, X, y): 
+            proba_pos = estimator.predict_proba(X)[:, 1] 
+            y = np.asarray(y) 
+            return proba_pos[y == 1].mean() - proba_pos[y == 0].mean()
+    
+        # r2_score = tjur_r2(skl_pipeline_fitted, x_val, y_val)
+        r2_score = tjur_r2(pipeline, x_val_transformed_df, y_val)
+
         feature_count = pipeline.named_steps['selector'].get_feature_count() # number of selected features after the selector node
         features_final = (pipeline.named_steps['selector'].get_feature_names(selected_features_after_ld)) # get the names of the features after the selector node by sending the selected features after the LD node
         # if features_final is not a list, convert it to a list
@@ -348,6 +506,18 @@ class EA:
         all_x = all_x.replace(1, 0.5)
         all_x = all_x.replace(2, 1)
 
+        # NEW: when user uploads dataset, see if its target is classification or continuous
+        if pd.api.types.is_numeric_dtype(all_y):
+            unique_vals = np.unique(all_y)
+            if len(unique_vals) <= 3 and all_y.dtype in [np.int32, np.int64, np.uint8]:
+                # Small set of unique discrete integers — probably classification
+                self.problem_type = "classification"
+            else:
+                self.problem_type = "regression"
+        else:
+            # self.problem_type = "classification"  # if target is categorical/string
+            raise ValueError("Target variable is not numeric.")
+
         # print the data after changing the encoding
         print("Genotype data: ", all_x, flush=True)
 
@@ -484,12 +654,14 @@ class EA:
             parent_ids = self.parent_selection(parent_cnt)
 
             # generate offspring
+            # NEW: added problem_type b/c threshold for removal of SNPs during crossover/mutation will differ
             offspring = self.repoduction.produce_offspring(rng_ = self.rng,
                                                            hub = self.hubs,
                                                            offspring_cnt=np.uint16(2*self.pop_size),
                                                            parent_ids=parent_ids,
                                                            population=self.population,
-                                                           order=var_order)
+                                                           order=var_order,
+                                                           problem_type=self.problem_type)
             # make sure we have the correct number of competing solutions
             assert len(offspring) + len(self.population) <= 3 * self.pop_size
 
@@ -719,7 +891,8 @@ class EA:
                 continue
 
             # create pipeline and add to the population
-            self.population.append(self.repoduction.generate_random_pipeline(self.rng, good_snps, int(self.seed)))
+            # NEW: add parameter self.problem_type in order to select from appropriate nodes (classification or regression use case)
+            self.population.append(self.repoduction.generate_random_pipeline(self.rng, good_snps, int(self.seed), self.problem_type))
 
         # make sure we have the correct number of pipelines
         assert (0 < len(self.population) <= self.pop_size)
@@ -776,15 +949,25 @@ class EA:
         ray_jobs = []
         # collect all ray jobs for evaluation
         for snp_name in unseen_snps:
-            ray_jobs.append(ray_uni_eval.remote(x_train = self.X_train_id,
-                                                y_train = self.y_train_id,
-                                                x_val = self.X_val_id,
-                                                y_val = self.y_val_id,
-                                                snp_name = snp_name,
-                                                snp_pos = self.hubs.get_snp_pos(snp_name)))
+            # NEW: if regression, evaluate with R2. If classification, evaluate with Tjur R2
+            if self.problem_type == "regression":
+                ray_jobs.append(ray_uni_eval.remote(x_train = self.X_train_id,
+                                                    y_train = self.y_train_id,
+                                                    x_val = self.X_val_id,
+                                                    y_val = self.y_val_id,
+                                                    snp_name = snp_name,
+                                                    snp_pos = self.hubs.get_snp_pos(snp_name)))
+            elif self.problem_type == "classification":
+                ray_jobs.append(ray_uni_eval_classification.remote(x_train = self.X_train_id,
+                                                    y_train = self.y_train_id,
+                                                    x_val = self.X_val_id,
+                                                    y_val = self.y_val_id,
+                                                    snp_name = snp_name,
+                                                    snp_pos = self.hubs.get_snp_pos(snp_name)))
         assert len(ray_jobs) == len(unseen_snps)
 
         # process results as they come in
+        # NEW: add self.problem_type
         while len(ray_jobs) > 0:
             finished, ray_jobs = ray.wait(ray_jobs)
             r2, type, snp_name = ray.get(finished)[0]
@@ -799,11 +982,21 @@ class EA:
         snps: Set of snps
         """
         good_snps = set()
-        for snp_name in snps:
-            # check if r2 is positive and the snp has not been pruned out yet
-            if self.hubs.get_uni_res(snp_name) > np.float32(0.0) and self.hubs.has_been_pruned(snp_name) == False:
-                # add to good snps
-                good_snps.add(snp_name)
+        
+        # NEW:
+        if self.problem_type == "regression":
+            for snp_name in snps:
+                # check if r2 is positive and the snp has not been pruned out yet
+                if self.hubs.get_uni_res(snp_name) > np.float32(0.0) and self.hubs.has_been_pruned(snp_name) == False:
+                    # add to good snps
+                    good_snps.add(snp_name)
+        elif self.problem_type == "classification":
+            for snp_name in snps:
+                # check if Tjur r2 is > 0.001 and the snp has not been pruned out yet
+                # *TEMP CHANGE TO 0.0001 for synthetic data testing
+                if self.hubs.get_uni_res(snp_name) > np.float32(0.0001) and self.hubs.has_been_pruned(snp_name) == False:
+                    # add to good snps
+                    good_snps.add(snp_name)
         # return the good snps
         return good_snps
 
@@ -814,7 +1007,8 @@ class EA:
         """
         print('Population:', flush=True)
         for p in self.population:
-            p.print_pipeline()
+            # NEW: add problem_type as a parameter to distinguish regressor and classifier
+            p.print_pipeline(self.problem_type)
 
     # evaluate the population                                   # r2 , feature count, pop_id
     def evaluation(self, pop: List[Pipeline], gen_pruned: snp_hub_gen_t) -> List[Pipeline]:
@@ -834,16 +1028,29 @@ class EA:
         # go through each pipeline in the population and evaluate
         # collect all ray jobs for evaluation
         for i, pipeline in enumerate(pop):
-            ray_jobs.append(ray_eval_pipeline.remote(self.X_train_id,
-                                                self.y_train_id,
-                                                self.X_val_id,
-                                                self.y_val_id,
-                                                self.construct_uni_nodes(pipeline.get_uni_snps()),
-                                                pipeline.get_selector_node(),
-                                                pipeline.get_ld_node(),
-                                                pipeline.get_root_node(),
-                                                np.int16(i),
-                                                snp_r2_set=self.hubs.generate_r2_dict(pipeline.get_uni_snps())))
+            # NEW: if regression, evaluate with R2. If classification, evaluate with Tjur R2
+            if self.problem_type == "regression":
+                ray_jobs.append(ray_eval_pipeline.remote(self.X_train_id,
+                                                    self.y_train_id,
+                                                    self.X_val_id,
+                                                    self.y_val_id,
+                                                    self.construct_uni_nodes(pipeline.get_uni_snps()),
+                                                    pipeline.get_selector_node(),
+                                                    pipeline.get_ld_node(),
+                                                    pipeline.get_root_node(),
+                                                    np.int16(i),
+                                                    snp_r2_set=self.hubs.generate_r2_dict(pipeline.get_uni_snps())))
+            elif self.problem_type == "classification":
+                ray_jobs.append(ray_eval_pipeline_classification.remote(self.X_train_id,
+                                                    self.y_train_id,
+                                                    self.X_val_id,
+                                                    self.y_val_id,
+                                                    self.construct_uni_nodes(pipeline.get_uni_snps()),
+                                                    pipeline.get_selector_node(),
+                                                    pipeline.get_ld_node(),
+                                                    pipeline.get_root_node(),
+                                                    np.int16(i),
+                                                    snp_r2_set=self.hubs.generate_r2_dict(pipeline.get_uni_snps())))
 
         assert len(ray_jobs) == len(pop)
 
@@ -1033,7 +1240,11 @@ class EA:
         # plot the pareto front
         plt.scatter([t[1] for t in pareto_front], [t[0] for t in pareto_front])
         plt.xlabel('Feature Count')
-        plt.ylabel('R2 Score')
+        # NEW:
+        if self.problem_type == "regression":
+            plt.ylabel('R2 Score')
+        elif self.problem_type == "classification":
+            plt.ylabel('Tjur R2 Score')
         plt.title('Final Pareto Front')
 
         # Annotate the points with pipeline numbers (indexes in pareto front)
@@ -1152,13 +1363,27 @@ class EA:
             ############ FOR PERM IMP ############
 
             # create the pipeline without refitting the regressor
-            model = pipeline.get_root_node().regressor
+            # NEW: regressor/classifier distinction
+            if self.problem_type == "regression":
+                model = pipeline.get_root_node().regressor
+            elif self.problem_type == "classification":
+                model = pipeline.get_root_node().classifier
             fitted_model = model.fit(uni_features_train, self.y_train)
 
             # get permutation importance
             # get a random state using the self.rng to get a number between 1 to 100000
             random_state = self.rng.integers(low=1, high=100000)
-            perm_imp = permutation_importance(fitted_model, uni_features_test, self.y_val, n_repeats=100, random_state=random_state, n_jobs=-1, scoring='r2')
+            # NEW: regressor/classifier distinction for R2 score
+            if self.problem_type == "regression":
+                perm_imp = permutation_importance(fitted_model, uni_features_test, self.y_val, n_repeats=100, random_state=random_state, n_jobs=-1, scoring='r2')
+            elif self.problem_type == "classification":
+                # NEW: creating Tjur R2 scorer to pass into permutation importance
+                def _tjur_r2_func(y_true, proba_pos):
+                    return proba_pos[y_true == 1].mean() - proba_pos[y_true == 0].mean()
+                
+                tjur_scorer = make_scorer(_tjur_r2_func, needs_proba=True)
+
+                perm_imp = permutation_importance(fitted_model, uni_features_test, self.y_val, n_repeats=100, random_state=random_state, n_jobs=-1, scoring=tjur_scorer)
 
             # make a sorted dataframe
             perm_imp_df = pd.DataFrame({'Feature': new_column_names, 'PFI_importance': perm_imp['importances_mean']})
