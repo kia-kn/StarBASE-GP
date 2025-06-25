@@ -141,7 +141,7 @@ def ray_uni_eval_classification(x_train,
             np.str_('overdominant'): UniOverDominantNode,
             np.str_('subadd'): UniSubAdditiveNode,
             np.str_('superadd'): UniSuperAdditiveNode,
-            # np.str_('pager'): UniPAGERNode,
+            np.str_('pager'): UniPAGERNode,
             }
 
     # iterate over the uni node types and create sklearn pipeline
@@ -522,6 +522,7 @@ class EA:
         print("Genotype data: ", all_x, flush=True)
 
         # partition data based splits
+        # Add stratify for classification?
         self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(all_x, all_y, test_size=split, random_state=data_seed)
 
         # check if the data was partitioned correctly
@@ -759,8 +760,11 @@ class EA:
         pop2_scores: List[Tuple[np.float32, np.uint16]]
             Second list of pipeline scores
         """
-        # make sure all population scores are positive
-        assert all(pipeline.get_trait_r2() > 0.0 for pipeline in pop1)
+        if self.problem_type == "regression":
+            # make sure all population scores are positive
+            assert all(pipeline.get_trait_r2() > 0.0 for pipeline in pop1)
+        elif self.problem_type == "classification":
+            assert all(pipeline.get_trait_r2() > 0.0001 for pipeline in pop1)
 
         # combine both the population and offspring lists into one
         pipelines_original = pop1
@@ -971,7 +975,7 @@ class EA:
         while len(ray_jobs) > 0:
             finished, ray_jobs = ray.wait(ray_jobs)
             r2, type, snp_name = ray.get(finished)[0]
-            self.hubs.update_snp_hub(snp_name, r2, type, gen_seen)
+            self.hubs.update_snp_hub(snp_name, r2, type, gen_seen, self.problem_type)
 
     # remove bad snps: r2 < 0 and snp has been pruned
     def remove_bad_snps(self, snps: Set) -> Set:
@@ -1072,9 +1076,15 @@ class EA:
         # collect only pipelines that do not consist of only pruned snps
         new_pop = []
 
-        for pipeline in pop:
-            if pipeline.get_trait_r2() > 0.0 and self.hubs.all_snps_pruned(pipeline.get_trait_feature_names()) == False:
-                new_pop.append(pipeline)
+        # NEW: if/elif statement for regression/classification thresholds
+        if self.problem_type == "regression":
+            for pipeline in pop:
+                if pipeline.get_trait_r2() > 0.0 and self.hubs.all_snps_pruned(pipeline.get_trait_feature_names()) == False:
+                    new_pop.append(pipeline)
+        elif self.problem_type == "classification":
+            for pipeline in pop:
+                if pipeline.get_trait_r2() > 0.0001 and self.hubs.all_snps_pruned(pipeline.get_trait_feature_names()) == False:
+                    new_pop.append(pipeline)
 
         return new_pop
 

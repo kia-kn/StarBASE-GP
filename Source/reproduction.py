@@ -251,7 +251,7 @@ class Reproduction:
         for uni_snp in mutated_snps:
             # increment the mutation count
             mut_cnt += np.uint16(1)
-            parent_uni_snps.add(self.get_ran_snp_mut(rng, uni_snp, hub))
+            parent_uni_snps.add(self.get_ran_snp_mut(rng, uni_snp, hub, problem_type))
 
         offspring = Pipeline(uni_snps=parent_uni_snps, selector_node=parent.get_selector_node(),
                              ld_node=parent.get_ld_node(), root_node=parent.get_root_node())
@@ -302,7 +302,7 @@ class Reproduction:
          for uni_snp in mutated_snps:
              # increment the mutation count
              mut_cnt += np.uint16(1)
-             offspring_uni_snps.add(self.get_ran_snp_mut(rng, uni_snp, hub))
+             offspring_uni_snps.add(self.get_ran_snp_mut(rng, uni_snp, hub, problem_type))
 
          new_offspring = Pipeline(uni_snps=offspring_uni_snps, selector_node=offspring.get_selector_node(),
                               ld_node=offspring.get_ld_node(), root_node=offspring.get_root_node())
@@ -342,7 +342,7 @@ class Reproduction:
         else:
             return np.uint16(rng.integers(1, num_add_range, endpoint=False))
 
-    def get_ran_snp_mut(self, rng_: rng_t, snp_name: snp_t, hub: SnpHub) -> snp_t:
+    def get_ran_snp_mut(self, rng_: rng_t, snp_name: snp_t, hub: SnpHub, problem_type: str) -> snp_t:
         # set the random number generator
         rng = np.random.default_rng(rng_)
 
@@ -357,21 +357,21 @@ class Reproduction:
         # in chromosome and in bin
         if mut_fun == 0:
             if roll:
-                return hub.get_smt_snp_in_bin(snp=snp_name, rng_=rng)
+                return hub.get_smt_snp_in_bin(snp=snp_name, rng_=rng, problem_type=problem_type)
             else:
-                return hub.get_ran_snp_in_bin(snp=snp_name, rng_=rng)
+                return hub.get_ran_snp_in_bin(snp=snp_name, rng_=rng, problem_type=problem_type)
         # in chromosome and out of bin
         elif mut_fun == 1:
             if roll:
-                return hub.get_smt_snp_in_chrm(snp=snp_name, rng_=rng)
+                return hub.get_smt_snp_in_chrm(snp=snp_name, rng_=rng, problem_type=problem_type)
             else:
-                return hub.get_ran_snp_in_chrm(snp=snp_name, rng_=rng)
+                return hub.get_ran_snp_in_chrm(snp=snp_name, rng_=rng, problem_type=problem_type)
         # out of chromosome
         elif mut_fun == 2:
             if roll:
-                return hub.get_smt_snp_out_chrm(snp=snp_name, rng_=rng)
+                return hub.get_smt_snp_out_chrm(snp=snp_name, rng_=rng, problem_type=problem_type)
             else:
-                return hub.get_ran_snp_out_chrm(snp=snp_name, rng_=rng)
+                return hub.get_ran_snp_out_chrm(snp=snp_name, rng_=rng, problem_type=problem_type)
         else:
             exit("Unknown mutation function", -1)
 

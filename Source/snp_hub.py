@@ -293,7 +293,8 @@ class SnpHub:
 
         # update snp hub with the r2 and encoding type
         # assuming that this only gets called once per snp
-        def update_snp(self, snp: snp_t, value: np.float32, encoding:np.str_, gen_seen: snp_hub_gen_t) -> None:
+        # NEW: problem_type parameter to have different thresholds for classification/regression
+        def update_snp(self, snp: snp_t, value: np.float32, encoding:np.str_, gen_seen: snp_hub_gen_t, problem_type: str) -> None:
             # assert that snp is in hub
             assert snp in self.hub
             # make sure we have not seen this snp before
@@ -308,16 +309,25 @@ class SnpHub:
             # update the generation seen
             self.hub[snp][7] = gen_seen
 
-            # if value is negative, set as prunned
-            if value < 0.0:
-                self.flip_prunned(snp, gen_seen)
+            if problem_type == "regression":
+                # if value is negative, set as prunned
+                if value < 0.0:
+                    self.flip_prunned(snp, gen_seen)
+            elif problem_type == "classification":
+                if value < 0.0001:
+                    self.flip_prunned(snp, gen_seen)
 
             return
 
         # get snp based on r2 weight from all snps in hub with positive r2 and count > 0
-        def get_snp_r2_weighted(self) -> Tuple[npt.NDArray[snp_t], npt.NDArray[r2_t]]:
-            # get all snps with r2 > 0.0 and count greater than 0
-            snps = [snp for snp in self.hub.keys() if self.get_uni_res(snp) > np.float32(0.0) and self.has_been_seen(snp)]
+        # NEW: problem_type parameter
+        def get_snp_r2_weighted(self, problem_type: str) -> Tuple[npt.NDArray[snp_t], npt.NDArray[r2_t]]:
+            if problem_type == "regression":
+                # get all snps with r2 > 0.0 and count greater than 0
+                snps = [snp for snp in self.hub.keys() if self.get_uni_res(snp) > np.float32(0.0) and self.has_been_seen(snp)]
+            elif problem_type == "classification":
+                # get all snps with r2 > 0.001 and count greater than 0
+                snps = [snp for snp in self.hub.keys() if self.get_uni_res(snp) > np.float32(0.0001) and self.has_been_seen(snp)]
 
             # get all r2 scores
             r2 = np.array([self.get_uni_res(snp) for snp in snps], dtype=np.float32)
@@ -449,7 +459,8 @@ class SnpHub:
             return np.uint32(sum)
 
         # get all snps in a given bin with r2 > 0.0                   SNPS              weighted r2 scores > 0
-        def get_snps_r2_in_bin(self, snp: snp_t, snp_hub) -> Tuple[npt.NDArray[snp_t], npt.NDArray[r2_t]]:
+        # NEW: problem_type parameter
+        def get_snps_r2_in_bin(self, snp: snp_t, snp_hub, problem_type: str) -> Tuple[npt.NDArray[snp_t], npt.NDArray[r2_t]]:
             # make sure that snp_hub is the correct type
             assert isinstance(snp_hub, SnpHub.Hub)
 
@@ -467,9 +478,14 @@ class SnpHub:
                 assert s in snp_hub.hub
 
                 # check if r2 is greater than 0.0 and count is greater than 0
-                if snp_hub.get_uni_res(s) > r2_t(0.0) and snp_hub.has_been_seen(s):
-                    snps.append(s)
-                    r2.append(snp_hub.get_uni_res(s))
+                if problem_type == "regression":
+                    if snp_hub.get_uni_res(s) > r2_t(0.0) and snp_hub.has_been_seen(s):
+                        snps.append(s)
+                        r2.append(snp_hub.get_uni_res(s))
+                elif problem_type == "classification":
+                    if snp_hub.get_uni_res(s) > r2_t(0.0001) and snp_hub.has_been_seen(s):
+                        snps.append(s)
+                        r2.append(snp_hub.get_uni_res(s))
 
             # make sure snps and r2 are the same size
             assert len(snps) == len(r2)
@@ -502,7 +518,7 @@ class SnpHub:
             return snp_t(f"{chrom}.{rng.choice(candidates)}")
 
         # get all snps in the same chromosome but different bin
-        def get_snps_r2_in_chrom(self, snp: snp_t, snp_hub) -> Tuple[npt.NDArray[snp_t], npt.NDArray[r2_t]]:
+        def get_snps_r2_in_chrom(self, snp: snp_t, snp_hub, problem_type: str) -> Tuple[npt.NDArray[snp_t], npt.NDArray[r2_t]]:
             # make sure there is a '.' inside the snp string
             assert '.' in snp
             # make sure snp_hub is the correct type
@@ -529,9 +545,14 @@ class SnpHub:
                     assert s in snp_hub.hub
 
                     # check if r2 is greater than 0.0 and count is greater than 0
-                    if snp_hub.get_uni_res(s) > r2_t(0.0) and snp_hub.has_been_seen(s):
-                        snps.append(s)
-                        r2.append(snp_hub.get_uni_res(s))
+                    if problem_type == "regression":
+                        if snp_hub.get_uni_res(s) > r2_t(0.0) and snp_hub.has_been_seen(s):
+                            snps.append(s)
+                            r2.append(snp_hub.get_uni_res(s))
+                    elif problem_type == "classification":
+                        if snp_hub.get_uni_res(s) > r2_t(0.0001) and snp_hub.has_been_seen(s):
+                            snps.append(s)
+                            r2.append(snp_hub.get_uni_res(s))
 
             # make sure snps and r2 are the same size
             assert len(snps) == len(r2)
@@ -568,7 +589,7 @@ class SnpHub:
             return snp_t(f"{chrom}.{pos}")
 
         # get all snps outside the chromosome with r2 > 0.0
-        def get_snps_r2_out_chrom(self, snp: snp_t, snp_hub) -> Tuple[npt.NDArray[snp_t], npt.NDArray[r2_t]]:
+        def get_snps_r2_out_chrom(self, snp: snp_t, snp_hub, problem_type: str) -> Tuple[npt.NDArray[snp_t], npt.NDArray[r2_t]]:
             # make sure there is a '.' inside the snp string
             assert '.' in snp
             # make sure snp_hub is the correct type
@@ -597,9 +618,14 @@ class SnpHub:
                         assert s in snp_hub.hub
 
                         # check if r2 is greater than 0.0 and count is greater than 0
-                        if snp_hub.get_uni_res(s) > r2_t(0.0) and snp_hub.has_been_seen(s):
-                            snps.append(s)
-                            r2.append(snp_hub.get_uni_res(s))
+                        if problem_type == "regression":
+                            if snp_hub.get_uni_res(s) > r2_t(0.0) and snp_hub.has_been_seen(s):
+                                snps.append(s)
+                                r2.append(snp_hub.get_uni_res(s))
+                        elif problem_type == "classification":
+                            if snp_hub.get_uni_res(s) > r2_t(0.0001) and snp_hub.has_been_seen(s):
+                                snps.append(s)
+                                r2.append(snp_hub.get_uni_res(s))
 
             # make sure snps and r2 are the same size
             assert len(snps) == len(r2)
@@ -742,12 +768,16 @@ class SnpHub:
         return
 
     # update snp hub with best univariate r2 result and corresponding encoder type
-    def update_snp_hub(self, snp:snp_t, result:snp_hub_res_t, type: snp_hub_enc_t, gen_seen: snp_hub_gen_t) -> None:
+    def update_snp_hub(self, snp:snp_t, result:snp_hub_res_t, type: snp_hub_enc_t, gen_seen: snp_hub_gen_t, problem_type: str) -> None:
         # update Hub object: if r2 is negative, flip prunned flag
-        self.hub.update_snp(snp, result, type, gen_seen)
-        # update Consideration_Hub object: if r2 is negative, remove snp from non prunned
-        if result < r2_t(0.0):
-            self.consideration_hub.remove_snp(snp)
+        self.hub.update_snp(snp, result, type, gen_seen, problem_type)
+        if problem_type == "regression":
+            # update Consideration_Hub object: if r2 is negative, remove snp from non prunned
+            if result < r2_t(0.0):
+                self.consideration_hub.remove_snp(snp)
+        elif problem_type == "classification":
+            if result < r2_t(0.0001):
+                self.consideration_hub.remove_snp(snp)
         return
 
     # check if snp has encoder type recorded in the snp hub
@@ -759,7 +789,7 @@ class SnpHub:
         return self.hub.get_snp_pos(snp)
 
     # get a snp from the same chromosome and bin with r2 > 0.0 based on r2 weight
-    def get_smt_snp_in_bin(self, snp: snp_t, rng_: rng_t) -> snp_t:
+    def get_smt_snp_in_bin(self, snp: snp_t, rng_: rng_t, problem_type: str) -> snp_t:
         # make sure there is a '.' inside the snp string
         assert '.' in snp
 
@@ -782,13 +812,18 @@ class SnpHub:
         for p in bin:
             s = snp_t(f"{chrom}.{p}")
 
-            if self.hub.get_uni_res(s) > r2_t(0.0) and self.hub.has_been_pruned(s) == False and s != snp:
-                snps.append(s)
-                r2.append(self.hub.get_uni_res(s))
+            if problem_type == "regression":
+                if self.hub.get_uni_res(s) > r2_t(0.0) and self.hub.has_been_pruned(s) == False and s != snp:
+                    snps.append(s)
+                    r2.append(self.hub.get_uni_res(s))
+            elif problem_type == "classification":
+                if self.hub.get_uni_res(s) > r2_t(0.0001) and self.hub.has_been_pruned(s) == False and s != snp:
+                    snps.append(s)
+                    r2.append(self.hub.get_uni_res(s))
 
         # if no snps were returned, return a random one
         if len(snps) == 0:
-            return self.get_ran_snp_in_bin(snp, rng)
+            return self.get_ran_snp_in_bin(snp, rng, problem_type)
 
         # get a random snp based on r2 scores as weights
         r2 = r2 / np.sum(r2, dtype=np.float32)
@@ -804,7 +839,7 @@ class SnpHub:
         return snp
 
     # get a random snp from the same chromosome and bin
-    def get_ran_snp_in_bin(self, snp: snp_t, rng_: rng_t) -> snp_t:
+    def get_ran_snp_in_bin(self, snp: snp_t, rng_: rng_t, problem_type: str) -> snp_t:
         # make sure there is a '.' inside the snp string
         assert '.' in snp
 
@@ -827,8 +862,11 @@ class SnpHub:
 
             # not seen
             not_seen = self.hub.has_been_seen(s) == False
-            # r2 > 0.0 and seen and not pruned
-            seen_r2_np = self.hub.get_uni_res(s) > r2_t(0.0) and self.hub.has_been_seen(s) and self.hub.has_been_pruned(s) == False
+            if problem_type == "regression":
+                # r2 > 0.0 and seen and not pruned
+                seen_r2_np = self.hub.get_uni_res(s) > r2_t(0.0) and self.hub.has_been_seen(s) and self.hub.has_been_pruned(s) == False
+            elif problem_type == "classification":
+                seen_r2_np = self.hub.get_uni_res(s) > r2_t(0.0001) and self.hub.has_been_seen(s) and self.hub.has_been_pruned(s) == False
 
             if (not_seen or seen_r2_np) and s != snp:
                 snps.append(s)
@@ -849,7 +887,7 @@ class SnpHub:
         return snp
 
     # geta snp from the same chromosome but different bin
-    def get_smt_snp_in_chrm(self, snp: snp_t, rng_: rng_t) -> snp_t:
+    def get_smt_snp_in_chrm(self, snp: snp_t, rng_: rng_t, problem_type: str) -> snp_t:
         # initialize rng
         rng = np.random.default_rng(rng_)
 
@@ -867,15 +905,20 @@ class SnpHub:
         for pos in self.consideration_hub.consideration_hub[chrom]:
             s = snp_t(f"{chrom}.{pos}")
 
-            if self.hub.get_uni_res(s) > r2_t(0.0) and self.hub.has_been_seen(s) and self.hub.get_snp_bin(s) != bin_id:
-                snps.append(s)
-                r2.append(self.hub.get_uni_res(s))
+            if problem_type == "regression":
+                if self.hub.get_uni_res(s) > r2_t(0.0) and self.hub.has_been_seen(s) and self.hub.get_snp_bin(s) != bin_id:
+                    snps.append(s)
+                    r2.append(self.hub.get_uni_res(s))
+            elif problem_type == "classification":
+                if self.hub.get_uni_res(s) > r2_t(0.0001) and self.hub.has_been_seen(s) and self.hub.get_snp_bin(s) != bin_id:
+                    snps.append(s)
+                    r2.append(self.hub.get_uni_res(s))
 
         r2 = r2 / np.sum(r2, dtype=np.float32)
 
         # if no snps were returned, return a random one
         if len(snps) == 0:
-            return self.get_ran_snp_in_chrm(snp, rng)
+            return self.get_ran_snp_in_chrm(snp, rng, problem_type)
 
         # get a random snp based on r2 scores as weights
         choice = rng.choice(snps, p=r2)
@@ -890,7 +933,7 @@ class SnpHub:
         return snp
 
     # get a random snp from the same chromosome but different bin
-    def get_ran_snp_in_chrm(self, snp: snp_t, rng_: rng_t) -> snp_t:
+    def get_ran_snp_in_chrm(self, snp: snp_t, rng_: rng_t, problem_type: str) -> snp_t:
         # make sure there is a '.' inside the snp string
         assert '.' in snp
 
@@ -912,8 +955,11 @@ class SnpHub:
             s = snp_t(f"{chrom}.{pos}")
             # not seen
             not_seen = self.hub.has_been_seen(s) == False
-            # r2 > 0.0 and seen and not pruned
-            seen_r2_np = self.hub.get_uni_res(s) > r2_t(0.0) and self.hub.has_been_seen(s) and self.hub.has_been_pruned(s) == False
+            if problem_type == "regression":
+                # r2 > 0.0 and seen and not pruned
+                seen_r2_np = self.hub.get_uni_res(s) > r2_t(0.0) and self.hub.has_been_seen(s) and self.hub.has_been_pruned(s) == False
+            elif problem_type == "classification":
+                seen_r2_np = self.hub.get_uni_res(s) > r2_t(0.0001) and self.hub.has_been_seen(s) and self.hub.has_been_pruned(s) == False
 
             if (not_seen or seen_r2_np) and self.hub.get_snp_bin(s) != bin_id:
                 snps.append(s)
@@ -934,7 +980,7 @@ class SnpHub:
         return snp
 
     # get a snp from outside the chromosome with r2 > 0.0 based on r2 weight
-    def get_smt_snp_out_chrm(self, snp: snp_t, rng_: rng_t) -> snp_t:
+    def get_smt_snp_out_chrm(self, snp: snp_t, rng_: rng_t, problem_type: str) -> snp_t:
         # make sure there is a '.' inside the snp string
         assert '.' in snp
 
@@ -962,15 +1008,20 @@ class SnpHub:
         for pos in self.consideration_hub.consideration_hub[c_pic]:
             s = snp_t(f"{c_pic}.{pos}")
 
-            if self.hub.get_uni_res(s) > r2_t(0.0) and self.hub.has_been_seen(s):
-                snps.append(s)
-                r2.append(self.hub.get_uni_res(s))
+            if problem_type == "regression":
+                if self.hub.get_uni_res(s) > r2_t(0.0) and self.hub.has_been_seen(s):
+                    snps.append(s)
+                    r2.append(self.hub.get_uni_res(s))
+            elif problem_type == "classification":
+                if self.hub.get_uni_res(s) > r2_t(0.0001) and self.hub.has_been_seen(s):
+                    snps.append(s)
+                    r2.append(self.hub.get_uni_res(s))
 
         r2 = r2 / np.sum(r2, dtype=np.float32)
 
         # if no snps were returned, return a random one
         if len(snps) == 0:
-            return self.get_ran_snp_out_chrm(snp, rng)
+            return self.get_ran_snp_out_chrm(snp, rng, problem_type)
 
         # get a random snp based on r2 scores as weights
         choice = rng.choice(snps, p=r2)
@@ -985,7 +1036,7 @@ class SnpHub:
         return snp
 
     # get random snp from outside the chromosome
-    def get_ran_snp_out_chrm(self, snp: snp_t, rng_: rng_t) -> snp_t:
+    def get_ran_snp_out_chrm(self, snp: snp_t, rng_: rng_t, problem_type: str) -> snp_t:
         # make sure there is a '.' inside the snp string
         assert '.' in snp
 
@@ -1014,8 +1065,11 @@ class SnpHub:
             s = snp_t(f"{c_pic}.{pos}")
             # not seen
             not_seen = self.hub.has_been_seen(s) == False
-            # r2 > 0.0 and seen and not pruned
-            seen_r2_np = self.hub.get_uni_res(s) > r2_t(0.0) and self.hub.has_been_seen(s) and self.hub.has_been_pruned(s) == False
+            if problem_type == "regression":
+                # r2 > 0.0 and seen and not pruned
+                seen_r2_np = self.hub.get_uni_res(s) > r2_t(0.0) and self.hub.has_been_seen(s) and self.hub.has_been_pruned(s) == False
+            elif problem_type == "classification":
+                seen_r2_np = self.hub.get_uni_res(s) > r2_t(0.0001) and self.hub.has_been_seen(s) and self.hub.has_been_pruned(s) == False
 
             if (not_seen or seen_r2_np):
                 snps.append(s)

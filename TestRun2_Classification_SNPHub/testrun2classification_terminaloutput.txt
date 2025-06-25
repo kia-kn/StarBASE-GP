@@ -1,0 +1,119 @@
+2025-06-24 15:17:04,651	INFO worker.py:1908 -- Started a local Ray instance. View the dashboard at 127.0.0.1:8265 
+
+Loading data...
+Path: ./simulated_classification_GWAS_1_copy.csv
+Dataset split seed: 0
+X_data.shape: (3000, 10000)
+y_data.shape: (3000,)
+
+Genotype data:        1.122429  1.124361  1.130183  ...  20.9952799  20.9960930  20.9985619
+0          0.5       0.5       0.5  ...         0.0         1.0         0.0
+1          0.5       0.0       0.5  ...         0.5         0.5         0.5
+2          0.0       0.0       0.5  ...         1.0         1.0         0.5
+3          0.5       0.0       0.5  ...         0.0         0.5         0.5
+4          0.0       0.5       0.0  ...         0.5         0.0         1.0
+...        ...       ...       ...  ...         ...         ...         ...
+2995       0.0       0.5       1.0  ...         0.0         0.0         0.0
+2996       0.5       0.0       0.0  ...         0.0         0.5         0.0
+2997       0.0       0.5       0.5  ...         0.0         0.0         0.5
+2998       0.5       0.5       0.5  ...         0.0         0.5         0.5
+2999       0.5       0.0       0.5  ...         0.5         0.5         0.0
+
+[3000 rows x 10000 columns]
+X_train_new.shape: (1500, 10000)
+X_train values:        1.122429  1.124361  1.130183  ...  20.9952799  20.9960930  20.9985619
+689        0.5       0.0       0.0  ...         0.5         0.5         0.0
+1146       0.5       0.5       0.5  ...         0.5         0.0         0.5
+1069       0.5       0.5       0.5  ...         0.5         0.5         0.5
+214        0.5       0.0       0.5  ...         0.5         0.0         0.0
+2533       0.5       0.0       0.0  ...         0.5         1.0         0.5
+...        ...       ...       ...  ...         ...         ...         ...
+763        0.0       0.0       0.0  ...         0.0         0.0         1.0
+835        0.5       1.0       1.0  ...         0.5         0.0         0.5
+1653       0.5       0.5       0.0  ...         0.5         0.0         1.0
+2607       1.0       0.5       0.0  ...         0.0         0.5         0.0
+2732       0.5       0.5       0.5  ...         0.0         0.0         0.5
+
+[1500 rows x 10000 columns]
+y_train_new.shape: (1500,)
+
+X_val_new.shape: (1500, 10000)
+y_val_new.shape: (1500,)
+
+Data loaded successfully.
+
+Data loaded in 0.35691624879837036 mins
+Initializing Non Pruned Hub
+Non Pruned Hub Initialized
+
+Initializing SnpHub
+Bin Hub Initialized
+SNP Hub Initialized
+Hubs done in 0.00793517033259074 mins
+Initializing population...
+(ray_eval_pipeline_classification pid=42625) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=42625)   warnings.warn(
+(ray_eval_pipeline_classification pid=42625) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by LogisticRegression.
+(ray_eval_pipeline_classification pid=42626) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by SGDClassifier.
+(ray_eval_pipeline_classification pid=42626) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=42626)   warnings.warn(
+(ray_eval_pipeline_classification pid=42625) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=42625)   warnings.warn(
+(ray_eval_pipeline_classification pid=42625) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by GradientBoostingClassifier.
+(ray_eval_pipeline_classification pid=42625) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=42625)   warnings.warn(
+(ray_eval_pipeline_classification pid=42625) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by RandomForestClassifier.
+(ray_eval_pipeline_classification pid=42625) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=42625)   warnings.warn(
+(ray_eval_pipeline_classification pid=42625) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by RandomForestClassifier.
+(ray_eval_pipeline_classification pid=42625) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=42625)   warnings.warn(
+(ray_eval_pipeline_classification pid=42625) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by LogisticRegression.
+(ray_eval_pipeline_classification pid=42625) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=42625)   warnings.warn(
+(ray_eval_pipeline_classification pid=42625) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by SGDClassifier.
+(ray_eval_pipeline_classification pid=42626) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=42626)   warnings.warn(
+(ray_eval_pipeline_classification pid=42626) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by DecisionTreeClassifier.
+(ray_eval_pipeline_classification pid=42626) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=42626)   warnings.warn(
+(ray_eval_pipeline_classification pid=42626) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by GradientBoostingClassifier.
+(ray_eval_pipeline_classification pid=42625) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=42625)   warnings.warn(
+(ray_eval_pipeline_classification pid=42625) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by DecisionTreeClassifier.
+Population initialized in 0.7638850296868218 hours
+Entering evolutionary proccess.
+
+Generation: 0
+Population size: 72
+Size of Pareto Front: 5
+# of snps still considered (non_pruned + not_seen): 2326
+Proportion of seen SNPs: 87.11%
+Total mutations applied in reproduction: 13810
+(ray_eval_pipeline_classification pid=42625) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/feature_selection/_base.py:102: UserWarning: No features were selected: either the data is too noisy or the selection test too strict.
+(ray_eval_pipeline_classification pid=42625)   warnings.warn(
+(ray_eval_pipeline_classification pid=42625) ERROR:root:Exception while fitting pipeline after LD: Found array with 0 feature(s) (shape=(1500, 0)) while a minimum of 1 is required by LogisticRegression.
+Time to finish generation: 28.159070734182993 minutes
+
+Generation: 1
+Population size: 100
+Size of Pareto Front: 14
+# of snps still considered (non_pruned + not_seen): 375
+Proportion of seen SNPs: 99.69%
+Total mutations applied in reproduction: 13367
+(ray_eval_pipeline_classification pid=42625) ERROR:root:Exception while fitting pipeline after LD: Found array with 1 feature(s) (shape=(1500, 1)) while a minimum of 2 is required by SequentialFeatureSelector.
+Time to finish generation: 24.301636930306753 minutes
+
+Final run/population details
+Final population size: 100
+Size of Final Pareto Front: 14
+# of snps still considered (non_pruned + not_seen): 219
+Proportion of seen SNPs: 100.00%
+Time to finish 2 generations: 98.32716783285142 minutes
+pareto front: [(0.037553936, 1), (0.07084488, 2), (0.112628385, 3), (0.14950411, 6), (0.15420082, 8), (0.15503168, 14), (0.18329199, 15), (0.18647131, 19), (0.20294161, 27), (0.21703991, 31), (0.2875523, 33), (0.29011422, 46), (0.31288832, 78), (0.31944492, 79)]
+Evolution done in 1.6394205217228996 hours
+Size of Pareto Front: 14
+All PFI values saved to all_pipelines_PFI_values.csv
+Post analysis done in 0.030959189401732548 hours
+Time taken: 1.6764606552653842 hours
+(base) kia@Kias-MacBook-Air StarBASE-GP % 

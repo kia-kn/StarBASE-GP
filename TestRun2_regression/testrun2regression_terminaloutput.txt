@@ -1,0 +1,121 @@
+2025-06-25 00:24:45,727	INFO worker.py:1908 -- Started a local Ray instance. View the dashboard at 127.0.0.1:8265 
+
+Loading data...
+Path: ./top10k_pruned_BMIres.csv
+Dataset split seed: 0
+X_data.shape: (5566, 10000)
+y_data.shape: (5566,)
+
+Genotype data:        1.281788173  1.282043175  ...  6.52750284  4.74420886
+0             0.5          0.5  ...         0.0         0.0
+1             1.0          1.0  ...         0.5         0.0
+2             0.0          0.0  ...         0.0         0.5
+3             0.5          0.5  ...         0.5         0.5
+4             0.0          0.5  ...         0.5         0.0
+...           ...          ...  ...         ...         ...
+5561          1.0          1.0  ...         0.0         1.0
+5562          1.0          1.0  ...         0.5         1.0
+5563          0.5          0.5  ...         0.0         0.5
+5564          0.5          0.5  ...         0.5         1.0
+5565          0.0          0.0  ...         0.5         0.0
+
+[5566 rows x 10000 columns]
+X_train_new.shape: (2783, 10000)
+X_train values:        1.281788173  1.282043175  ...  6.52750284  4.74420886
+1446          0.5          0.5  ...         0.5         0.0
+4942          0.5          0.5  ...         0.5         0.5
+4760          0.0          0.0  ...         0.5         0.5
+4784          0.5          0.5  ...         0.0         1.0
+3746          1.0          1.0  ...         0.0         1.0
+...           ...          ...  ...         ...         ...
+4931          1.0          1.0  ...         0.5         0.5
+3264          0.5          1.0  ...         0.5         0.5
+1653          0.5          0.5  ...         0.0         1.0
+2607          0.5          0.5  ...         1.0         0.0
+2732          1.0          1.0  ...         0.0         1.0
+
+[2783 rows x 10000 columns]
+y_train_new.shape: (2783,)
+
+X_val_new.shape: (2783, 10000)
+y_val_new.shape: (2783,)
+
+Data loaded successfully.
+
+Data loaded in 0.3822158694267273 mins
+Initializing Non Pruned Hub
+Non Pruned Hub Initialized
+
+Initializing SnpHub
+Bin Hub Initialized
+SNP Hub Initialized
+Hubs done in 0.0089271346728007 mins
+Initializing population...
+(ray_eval_pipeline pid=47523) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 2.452e+02, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47523)   model = cd_fast.enet_coordinate_descent(
+Population initialized in 0.8907033171918657 hours
+Entering evolutionary proccess.
+
+Generation: 0
+Population size: 42
+Size of Pareto Front: 9
+# of snps still considered (non_pruned + not_seen): 6661
+Proportion of seen SNPs: 72.65%
+Total mutations applied in reproduction: 12505
+(ray_eval_pipeline pid=47522) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 1.239e+00, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47522)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47523) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 2.873e+02, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47523)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47522) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 3.764e+02, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47522)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47523) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 4.974e+02, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47523)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47522) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 4.303e+02, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47522)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47522) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 1.026e+02, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47522)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47522) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 2.285e+02, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47522)   model = cd_fast.enet_coordinate_descent(
+Time to finish generation: 36.97193315029144 minutes
+
+Generation: 1
+Population size: 100
+Size of Pareto Front: 24
+# of snps still considered (non_pruned + not_seen): 4730
+Proportion of seen SNPs: 84.25%
+Total mutations applied in reproduction: 10825
+(ray_eval_pipeline pid=47522) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 1.952e+00, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47522)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47522) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 8.997e+02, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47522)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47522) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 1.517e+01, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47522)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47523) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 3.822e+02, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47523)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47523) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 6.563e+02, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47523)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47522) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 1.105e+03, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47522)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47522) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 3.090e+02, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47522)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47523) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 2.177e+02, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47523)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47523) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 7.121e+01, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47523)   model = cd_fast.enet_coordinate_descent(
+(ray_eval_pipeline pid=47523) /Users/kia/.pyenv/versions/3.10.10/lib/python3.10/site-packages/sklearn/linear_model/_coordinate_descent.py:628: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 3.356e+01, tolerance: 2.812e-01
+(ray_eval_pipeline pid=47523)   model = cd_fast.enet_coordinate_descent(
+Time to finish generation: 16.8657200495402 minutes
+
+Final run/population details
+Final population size: 100
+Size of Final Pareto Front: 22
+# of snps still considered (non_pruned + not_seen): 3637
+Proportion of seen SNPs: 91.57%
+Time to finish 2 generations: 107.30840743382772 minutes
+pareto front: [(0.011838494, 1), (0.03025688, 2), (0.0484024, 5), (0.05179487, 8), (0.052693367, 12), (0.06754673, 14), (0.07001903, 21), (0.0779965, 22), (0.08168327, 29), (0.09012081, 31), (0.123958215, 37), (0.13795492, 46), (0.14262892, 56), (0.16125794, 61), (0.17034699, 72), (0.17560025, 78), (0.18786168, 98), (0.19327772, 107), (0.19808441, 111), (0.2166432, 126), (0.21871382, 138), (0.22315955, 141)]
+Evolution done in 1.7891372091902626 hours
+Size of Pareto Front: 22
+All PFI values saved to all_pipelines_PFI_values.csv
+Post analysis done in 0.01223621884981791 hours
+Time taken: 1.8078925521506204 hours
+(base) kia@Kias-MacBook-Air StarBASE-GP % 
