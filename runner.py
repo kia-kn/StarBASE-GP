@@ -1,5 +1,7 @@
 import argparse
 import ray
+# NEW: for HPC node as a potential solution:
+ray.init(include_dashboard=False)
 import numpy as np
 from Source.evolver import EA
 import time
