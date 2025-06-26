@@ -13,8 +13,6 @@ from typing import List, Dict
 import pandas as pd
 import os
 import ray
-# NEW: for HPC node as a potential solution:
-ray.init(include_dashboard=False)
 from .pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from .snp_hub import SnpHub
