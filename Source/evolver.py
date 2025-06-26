@@ -1393,7 +1393,10 @@ class EA:
                 def _tjur_r2_func(y_true, proba_pos):
                     return proba_pos[y_true == 1].mean() - proba_pos[y_true == 0].mean()
                 
-                tjur_scorer = make_scorer(_tjur_r2_func, needs_proba=True)
+                # 'needs_proba' parameter only present in sklearn version 1.3 - did not work with sklearn 1.6.0
+                # tjur_scorer = make_scorer(_tjur_r2_func, needs_proba=True)
+                # NEW FOR SKLEARN 1.6 -> use response_method="predict_proba" instead of needs_proba=True
+                tjur_scorer = make_scorer(_tjur_r2_func, response_method="predict_proba")
 
                 perm_imp = permutation_importance(fitted_model, uni_features_test, self.y_val, n_repeats=100, random_state=random_state, n_jobs=-1, scoring=tjur_scorer)
 
