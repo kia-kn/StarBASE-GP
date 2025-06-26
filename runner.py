@@ -16,13 +16,17 @@ def main(args):
         'uni_cnt_max': np.uint16(args.uni_cnt_max),
         'uni_cnt_min': np.uint16(args.uni_cnt_min),
         'cores': args.cores,
-        'mut_selector_p': np.float64(1.0),  # This remains constant
-        'mut_regressor_p': np.float64(.5),  # This remains constant
-        # 'mut_ran_p': np.float64(args.mut_ran_p),
-        # 'mut_smt_p': np.float64(args.mut_smt_p),
-        # 'smt_in_in_p': np.float64(args.smt_in_in_p),
-        # 'smt_in_out_p': np.float64(args.smt_in_out_p),
-        # 'smt_out_out_p': np.float64(args.smt_out_out_p),
+        # NEW: readding these as arguments instead of constant values
+        # 'mut_selector_p': np.float64(0.5),  # This remains constant
+        # 'mut_regressor_p': np.float64(.5),  # This remains constant
+        'mut_selector_p': np.float64(args.mut_selector_p),  # This remains constant
+        'mut_regressor_p': np.float64(args.mut_regressor_p),  # This remains constant
+        # NEW: un-commenting next 5 lines
+        'mut_ran_p': np.float64(args.mut_ran_p),
+        'mut_smt_p': np.float64(args.mut_smt_p),
+        'smt_in_in_p': np.float64(args.smt_in_in_p),
+        'smt_in_out_p': np.float64(args.smt_in_out_p),
+        'smt_out_out_p': np.float64(args.smt_out_out_p),
         'mut_prob': np.float64(args.mut_prob),
         'cross_prob': np.float64(args.cross_prob),
         'save_directory': args.save_directory,
@@ -77,6 +81,9 @@ if __name__ == "__main__":
     parser.add_argument('--mut_prob', type=float, required=True, help="Mutation Probablity")
     parser.add_argument('--cross_prob', type=float, required=True, help="Crossover Probablity")
     parser.add_argument('--rand_init', type=int, required=True, help="Random initialization flag (0 or 1)")
+    # NEW:
+    parser.add_argument('--mut_selector_p', type=float, default=0.5, help="Selector mutation probability")
+    parser.add_argument('--mut_regressor_p', type=float, default=0.5, help="Regressor mutation probability")
 
     args = parser.parse_args()
     main(args)
