@@ -450,7 +450,9 @@ class EA:
         self.truth_distance = truth_distance
 
         # initialize ray
-        ray.init(num_cpus=cores, include_dashboard=True)
+        # ray.init(num_cpus=cores, include_dashboard=True)
+        # NEW: for HPC, turning include_dashboard=False
+        ray.init(num_cpus=cores, include_dashboard=False)
         print(flush=True)
 
     # data loader
