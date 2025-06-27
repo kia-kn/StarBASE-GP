@@ -525,7 +525,11 @@ class EA:
 
         # partition data based splits
         # Add stratify for classification?
-        self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(all_x, all_y, test_size=split, random_state=data_seed)
+        # NEW: added stratify=all_y for benchmarking test runs, can remove for ADSP data (a special case where data is already split)
+        if self.problem_type == "regression":
+            self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(all_x, all_y, test_size=split, random_state=data_seed)
+        elif self.problem_type == "classification":
+            self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(all_x, all_y, test_size=split, random_state=data_seed, stratify=all_y)
 
         # check if the data was partitioned correctly
         self.X_train, self.y_train = self.check_dataset(self.X_train, self.y_train)

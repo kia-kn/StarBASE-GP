@@ -45,7 +45,9 @@ def main(args):
     print(f"Data loaded in {(time.time() - start_time) / 60} mins")
 
     start_time = time.time()
-    ea.initialize_hubs(500)
+    # bin_size variable in initialize hubs
+    # was 500 before, setting to 50 for benchmarking test runs with simulated data
+    ea.initialize_hubs(50)
     print(f"Hubs done in {(time.time() - start_time) / 60} mins")
 
     start_time = time.time()
