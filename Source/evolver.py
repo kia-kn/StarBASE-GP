@@ -526,10 +526,29 @@ class EA:
         # partition data based splits
         # Add stratify for classification?
         # NEW: added stratify=all_y for benchmarking test runs, can remove for ADSP data (a special case where data is already split)
+        # if self.problem_type == "regression":
+        #     self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(all_x, all_y, test_size=split, random_state=data_seed)
+        # elif self.problem_type == "classification":
+        #     self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(all_x, all_y, test_size=split, random_state=data_seed, stratify=all_y)
+
+        # NEW: edit to above to check row indices of train/test splits
+        # Save original indices
+        all_indices = np.arange(len(all_x))
+
         if self.problem_type == "regression":
-            self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(all_x, all_y, test_size=split, random_state=data_seed)
+            self.X_train, self.X_val, self.y_train, self.y_val, train_indices, val_indices = train_test_split(
+                all_x, all_y, all_indices, test_size=split, random_state=data_seed
+            )
         elif self.problem_type == "classification":
-            self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(all_x, all_y, test_size=split, random_state=data_seed, stratify=all_y)
+            self.X_train, self.X_val, self.y_train, self.y_val, train_indices, val_indices = train_test_split(
+                all_x, all_y, all_indices, test_size=split, random_state=data_seed, stratify=all_y
+            )
+
+        # Print which row indices are in training/testing set
+        print(f"Training indices: {train_indices}", flush=True)
+        print(f"Validation indices: {val_indices}", flush=True)
+        # END of "edit to above to check row indices of train/test splits"
+
 
         # check if the data was partitioned correctly
         self.X_train, self.y_train = self.check_dataset(self.X_train, self.y_train)
