@@ -544,6 +544,7 @@ class EA:
                 all_x, all_y, all_indices, test_size=split, random_state=data_seed, stratify=all_y
             )
 
+        print("Data seed:", data_seed, flush=True)
         # Print which row indices are in training/testing set
         print(f"Training indices: {train_indices}", flush=True)
         print(f"Validation indices: {val_indices}", flush=True)
