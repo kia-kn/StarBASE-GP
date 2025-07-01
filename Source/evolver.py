@@ -548,8 +548,8 @@ class EA:
         # Print which row indices are in training/testing set
         # print(f"Training indices: {train_indices}", flush=True)
         # print(f"Validation indices: {val_indices}", flush=True)
-        # Save indices to file
-        output_filename = "split_indices.txt"
+        # Save train/test indices to file in the save directory
+        output_filename = os.path.join(self.save_directory, f"split_indices_seed_{data_seed}.txt")
         with open(output_filename, "w") as f:
             f.write("Train Indices:\n")
             f.write(", ".join(map(str, train_indices)))
