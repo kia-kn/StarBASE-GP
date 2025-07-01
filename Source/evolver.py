@@ -546,8 +546,17 @@ class EA:
 
         print("Data seed:", data_seed, flush=True)
         # Print which row indices are in training/testing set
-        print(f"Training indices: {train_indices}", flush=True)
-        print(f"Validation indices: {val_indices}", flush=True)
+        # print(f"Training indices: {train_indices}", flush=True)
+        # print(f"Validation indices: {val_indices}", flush=True)
+        # Save indices to file
+        output_filename = "split_indices.txt"
+        with open(output_filename, "w") as f:
+            f.write("Train Indices:\n")
+            f.write(", ".join(map(str, train_indices)))
+            f.write("\n\n")
+            f.write("Validation Indices:\n")
+            f.write(", ".join(map(str, val_indices)))
+        print(f"Saved split indices to {output_filename}", flush=True)
         # END of "edit to above to check row indices of train/test splits"
 
 
