@@ -169,6 +169,17 @@ def ray_uni_eval_classification(x_train,
         
         r2 = tjur_r2(skl_pipeline_fitted, x_val, y_val)
 
+        # NEW: checking Tjur R2 values under different encodings
+        if str(snp_name) in {
+            "1.1334155", "19.9686622", "2.4624594",
+            "20.6479946", "16.6238627", "3.854831"
+        } or str(snp_pos) in {
+            "1.1334155", "19.9686622", "2.4624594",
+            "20.6479946", "16.6238627", "3.854831"
+        }:
+            print(f"SNP: {snp_name}, Encoding: {lo}, Tjur R2: {r2:.6f}, Best So Far: {best_uni} ({best_res:.6f})")
+        # END
+
         # # *** just for debugging
         # if r2 > 0.0001:
         #     print(r2, ",", snp_name)
