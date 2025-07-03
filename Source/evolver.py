@@ -169,22 +169,6 @@ def ray_uni_eval_classification(x_train,
         
         r2 = tjur_r2(skl_pipeline_fitted, x_val, y_val)
 
-        # NEW: checking Tjur R2 values under different encodings
-        # if str(snp_name) in {
-        #     "1.1334155", "19.9686622", "2.4624594",
-        #     "20.6479946", "16.6238627", "3.854831"
-        # } or str(snp_pos) in {
-        #     "1.1334155", "19.9686622", "2.4624594",
-        #     "20.6479946", "16.6238627", "3.854831"
-        # }:
-        if str(snp_name) in {
-            "16.6238627"
-        } or str(snp_pos) in {
-            "16.6238627"
-        }:
-            print(f"SNP: {snp_name}, Encoding: {lo}, Tjur R2: {r2:.6f}, Best So Far: {best_uni} ({best_res:.6f})", flush=True)
-        # END
-
         # # *** just for debugging
         # if r2 > 0.0001:
         #     print(r2, ",", snp_name)
@@ -521,8 +505,9 @@ class EA:
         print(flush=True)
 
         # change all the 1 in all_x to 0.5, all 2 to 1 in all_x - changing the additive encoding from 0,1,2 to 0,0.5,1 to be consistent with the scale of the other encoders
-        all_x = all_x.replace(1, 0.5)
-        all_x = all_x.replace(2, 1)
+        # NEW: commenting these lines out temporarily because simulated data already comes in the form 0, 0.5, 1
+        # all_x = all_x.replace(1, 0.5)
+        # all_x = all_x.replace(2, 1)
 
         # NEW: when user uploads dataset, see if its target is classification or continuous
         if pd.api.types.is_numeric_dtype(all_y):
@@ -542,38 +527,10 @@ class EA:
         # partition data based splits
         # Add stratify for classification?
         # NEW: added stratify=all_y for benchmarking test runs, can remove for ADSP data (a special case where data is already split)
-        # if self.problem_type == "regression":
-        #     self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(all_x, all_y, test_size=split, random_state=data_seed)
-        # elif self.problem_type == "classification":
-        #     self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(all_x, all_y, test_size=split, random_state=data_seed, stratify=all_y)
-
-        # NEW: edit to above to check row indices of train/test splits
-        # Save original indices
-        all_indices = np.arange(len(all_x))
-
         if self.problem_type == "regression":
-            self.X_train, self.X_val, self.y_train, self.y_val, train_indices, val_indices = train_test_split(
-                all_x, all_y, all_indices, test_size=split, random_state=data_seed
-            )
+            self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(all_x, all_y, test_size=split, random_state=data_seed)
         elif self.problem_type == "classification":
-            self.X_train, self.X_val, self.y_train, self.y_val, train_indices, val_indices = train_test_split(
-                all_x, all_y, all_indices, test_size=split, random_state=data_seed, stratify=all_y
-            )
-
-        print("Data seed:", data_seed, flush=True)
-        # Print which row indices are in training/testing set
-        # print(f"Training indices: {train_indices}", flush=True)
-        # print(f"Validation indices: {val_indices}", flush=True)
-        # Save train/test indices to file in the save directory
-        output_filename = os.path.join(self.save_directory, f"split_indices_seed_{data_seed}.txt")
-        with open(output_filename, "w") as f:
-            f.write("Train Indices:\n")
-            f.write(", ".join(map(str, train_indices)))
-            f.write("\n\n")
-            f.write("Validation Indices:\n")
-            f.write(", ".join(map(str, val_indices)))
-        print(f"Saved split indices to {output_filename}", flush=True)
-        # END of "edit to above to check row indices of train/test splits"
+            self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(all_x, all_y, test_size=split, random_state=data_seed, stratify=all_y)
 
 
         # check if the data was partitioned correctly
