@@ -30,8 +30,6 @@ prob_t = np.float64
 snp_t = np.str_
 # snps type
 snps_t = Set
-# window distance type
-window_distance_t = np.uint32
 
 @typechecked
 class Reproduction:
@@ -47,8 +45,7 @@ class Reproduction:
                  mut_smt_p: prob_t = prob_t(.45),
                  smt_in_in_p: prob_t = prob_t(.1),
                  smt_in_out_p: prob_t = prob_t(.45),
-                 smt_out_out_p: prob_t = prob_t(.45),
-                 window_distance: window_distance_t = window_distance_t(1000000)) -> None:
+                 smt_out_out_p: prob_t = prob_t(.45)) -> None:
 
         # save all the variables
         self.uni_cnt_max = uni_cnt_max
@@ -63,7 +60,6 @@ class Reproduction:
         self.smt_in_in_p = smt_in_in_p
         self.smt_in_out_p = smt_in_out_p
         self.smt_out_out_p = smt_out_out_p
-        self.window_distance = window_distance
 
         return
 
@@ -361,15 +357,15 @@ class Reproduction:
         # in chromosome and in bin
         if mut_fun == 0:
             if roll:
-                return hub.get_smt_snp_in_bin(snp=snp_name, rng_=rng, window_distance=self.window_distance, problem_type=problem_type)
+                return hub.get_smt_snp_in_bin(snp=snp_name, rng_=rng, problem_type=problem_type)
             else:
-                return hub.get_ran_snp_in_bin(snp=snp_name, rng_=rng, window_distance=self.window_distance, problem_type=problem_type)
+                return hub.get_ran_snp_in_bin(snp=snp_name, rng_=rng, problem_type=problem_type)
         # in chromosome and out of bin
         elif mut_fun == 1:
             if roll:
-                return hub.get_smt_snp_in_chrm(snp=snp_name, rng_=rng, window_distance=self.window_distance, problem_type=problem_type)
+                return hub.get_smt_snp_in_chrm(snp=snp_name, rng_=rng, problem_type=problem_type)
             else:
-                return hub.get_ran_snp_in_chrm(snp=snp_name, rng_=rng, window_distance=self.window_distance, problem_type=problem_type)
+                return hub.get_ran_snp_in_chrm(snp=snp_name, rng_=rng, problem_type=problem_type)
         # out of chromosome
         elif mut_fun == 2:
             if roll:

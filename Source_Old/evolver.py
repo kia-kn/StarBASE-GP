@@ -67,8 +67,6 @@ snp_hub_gen_t = np.int32
 gen_chrom_num_t = np.int8
 # chromosome snp position
 gen_chrom_pos_t = np.int32
-# chromosome position type
-distance_t = np.uint32
 
 # evaluate unseen snps
 @ray.remote
@@ -386,7 +384,6 @@ class EA:
                  save_directory: str = "",
                  ground_truth: List[str] = [],
                  truth_distance: int = 0,
-                 window_distance: distance_t = distance_t(1000000)
                  ) -> None:
         """
         Main class for the evolutionary algorithm.
@@ -433,7 +430,6 @@ class EA:
         self.smt_in_in_p = smt_in_in_p
         self.smt_in_out_p = smt_in_out_p
         self.smt_out_out_p = smt_out_out_p
-        self.window_distance = window_distance
         self.population = [] # will hold all the pipelines
         self.repoduction = Reproduction(uni_cnt_max=uni_cnt_max,
                                         uni_cnt_min=uni_cnt_min,
@@ -446,8 +442,7 @@ class EA:
                                         mut_smt_p=mut_smt_p,
                                         smt_in_in_p=smt_in_in_p,
                                         smt_in_out_p=smt_in_out_p,
-                                        smt_out_out_p=smt_out_out_p,
-                                        window_distance=window_distance)
+                                        smt_out_out_p=smt_out_out_p)
         self.save_directory = save_directory
         self.rand_init = rand_init
 
@@ -611,7 +606,7 @@ class EA:
             Number of hubs to initialize.
         """
         # initialize the hubs
-        self.hubs = SnpHub(snps=self.snp_labels)
+        self.hubs = SnpHub(snps=self.snp_labels, bin_size=np.uint16(bin_size))
 
     # will evolve a population of pipelines for a specified number of generations
     def evolve(self, gens: int) -> None:
