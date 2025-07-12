@@ -419,6 +419,10 @@ class SnpHub:
                     self.order[chrom] = []
                 self.order[chrom].append(pos)
 
+            # sort all lists within the order dictionary
+            for chrom, order in self.order.items():
+                self.order[chrom] = sorted(order)
+
             # collect each snps bin number
             snp_bins = []
             # go through self.order and collect all snps, bin_num
@@ -693,7 +697,7 @@ class SnpHub:
 
         # if no snps were returned, return a random one
         if len(snps) == 0:
-            return self.get_ran_snp_in_chrm(snp, rng, problem_type)
+            return self.get_ran_snp_in_chrm(snp, rng, window_distance, problem_type)
 
         # get a random snp based on r2 scores as weights
         choice = rng.choice(snps, p=r2)
