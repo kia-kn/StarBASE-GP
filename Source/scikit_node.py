@@ -738,6 +738,7 @@ class LinearRegressionNode(ScikitNode, RegressorMixin):
         self.regressor = LinearRegression(fit_intercept=self.params['fit_intercept'])
 
 # CLASSIFICATION VERSION:
+# change to statsmodels
 # Logistic regression
 class LogisticRegressionNode(ScikitNode, ClassifierMixin):
     def __init__(self,

@@ -112,13 +112,17 @@ class Reproduction:
                                 ])
         elif problem_type == "classification":
             root_node = rng.choice([LogisticRegressionNode(rng_=rng),
-                                    RandomForestClassifierNode(rng_=rng, seed=seed),
-                                    SGDClassifierNode(rng_=rng, seed=seed),
-                                    DecisionTreeClassifierNode(rng_=rng, seed=seed),
-                                    ElasticNetNodeClassification(rng_=rng, seed=seed),
-                                    SVCNode(rng_=rng),
-                                    GradientBoostingClassifierNode(rng_=rng, seed=seed),
                                 ])
+        # NEW above: limiting to just Logistic Regression
+        # elif problem_type == "classification":
+        #     root_node = rng.choice([LogisticRegressionNode(rng_=rng),
+        #                             RandomForestClassifierNode(rng_=rng, seed=seed),
+        #                             SGDClassifierNode(rng_=rng, seed=seed),
+        #                             DecisionTreeClassifierNode(rng_=rng, seed=seed),
+        #                             ElasticNetNodeClassification(rng_=rng, seed=seed),
+        #                             SVCNode(rng_=rng),
+        #                             GradientBoostingClassifierNode(rng_=rng, seed=seed),
+        #                         ])
 
         # NEW: if condition based on problem type to select LDSelector node
         if problem_type == "regression":

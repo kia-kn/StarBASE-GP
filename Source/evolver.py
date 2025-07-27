@@ -154,6 +154,7 @@ def ray_uni_eval_classification(x_train,
         steps.append((lo, uni_node))
 
         # add logistic regressor
+        # change to statsmodels, regressor name to classifier
         steps.append(('regressor', LogisticRegression()))
 
         # create the pipeline
