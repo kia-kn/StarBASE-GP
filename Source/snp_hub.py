@@ -553,10 +553,11 @@ class SnpHub:
             f.write("snp,r2,encoding\n")
             for row in snp_data:
                 if row[6] == True and row[7] == False:
-                    # ADD THIS:
-                    # # snp_name = f"chr{row[0]}"
+                    # NEW PT2: ADD THIS:
+                    snp_name = f"chr{row[0]}"
                     # and then insert snp_name for row[0]
-                    f.write(f"{row[0]},{row[1]},{row[4]}\n")
+                    # f.write(f"{row[0]},{row[1]},{row[4]}\n")
+                    f.write(f"{snp_name},{row[1]},{row[4]}\n")
         return
 
     # update snp hub with best univariate r2 result and corresponding encoder type
