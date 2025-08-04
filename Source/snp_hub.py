@@ -513,8 +513,10 @@ class SnpHub:
         """
 
         # Save snp hub with headers
+        # for everything in row 0 append chr
         snp_data = []
         for k, v in self.hub.hub.items():
+            # add chr to k here
             # k: snp (row[0])
             # v[0]: r2 (row[1])
             # v[1]: idx (row[2])
@@ -536,7 +538,13 @@ class SnpHub:
             for row in snp_data:
                 # split snp into chromosome and position
                 chrom, pos = row[0].split('.')
-                f.write(f"{row[0]},{chrom},{pos},{row[1]},{row[2]},{row[4]},{row[5]},{row[6]},{row[7]},{row[8]}\n")
+                # f.write(f"{row[0]},{chrom},{pos},{row[1]},{row[2]},{row[4]},{row[5]},{row[6]},{row[7]},{row[8]}\n")
+                # NEW PT2: ADD THESE 2 LINES:
+                snp_name = f"chr{row[0]}"
+                # f.write(f"{snp_name},{chrom},{pos},{row[1]},{row[2]},{row[4]},{row[5]},{row[6]},{row[7]},{row[8]},{row[9]}\n")
+                # Removing row[9] for now because didn't have that above:
+                f.write(f"{snp_name},{chrom},{pos},{row[1]},{row[2]},{row[4]},{row[5]},{row[6]},{row[7]},{row[8]}\n")
+                
 
         # save csv with both seen and not prunned snps
         # Write snp hub to file
@@ -545,6 +553,9 @@ class SnpHub:
             f.write("snp,r2,encoding\n")
             for row in snp_data:
                 if row[6] == True and row[7] == False:
+                    # ADD THIS:
+                    # # snp_name = f"chr{row[0]}"
+                    # and then insert snp_name for row[0]
                     f.write(f"{row[0]},{row[1]},{row[4]}\n")
         return
 

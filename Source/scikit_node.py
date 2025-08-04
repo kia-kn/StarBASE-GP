@@ -13,6 +13,7 @@ from sklearn.feature_selection import VarianceThreshold, SelectPercentile, Selec
 from sklearn.linear_model import LinearRegression, ElasticNet, SGDRegressor, Lasso, LogisticRegression, SGDClassifier
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, ExtraTreesRegressor, ExtraTreesClassifier, RandomForestClassifier, GradientBoostingClassifier
+from sklearn.metrics import r2_score
 from sklearn.svm import SVR, SVC
 from typeguard import typechecked
 from typing import Dict
@@ -698,85 +699,164 @@ class FeatureEncodingFrequencySelector(ScikitNode, TransformerMixin):
 ############################ the regressor classes #######################################
 ##########################################################################################
 
-# Linear regression
+# # Linear regression
+# class LinearRegressionNode(ScikitNode, RegressorMixin):
+#     def __init__(self,
+#                  rng_: rng_t,
+#                  params: Dict = {},
+#                  name: name_t = name_t('LinearRegression')):
+#         super().__init__(name)
+#         rng = np.random.default_rng(rng_)
+
+#         # if params is an empty dictionary, then we will initialize the params
+#         if params == {}:
+#             self.params = {'fit_intercept': rng.choice([True, False])}
+#         else:
+#             assert len(params) == 1
+#             assert 'fit_intercept' in params
+#             self.params = params
+
+#         self.regressor = LinearRegression(fit_intercept=self.params['fit_intercept'])
+
+#     def fit(self, X, y):
+#         self.regressor.fit(X, y)
+#         return self.regressor
+
+#     def predict(self, X):
+#         return self.regressor.predict(X)
+
+#     def transform(self, X):
+#         # for consistency with the abstract class, we use the regressor's prediction as the transform output
+#         return self.predict(X)
+
+#     def mutate(self, rng_: rng_t):
+#         rng = np.random.default_rng(rng_)
+
+#         # randomly pick fit_intercept
+#         self.params['fit_intercept'] = rng.choice([True, False])
+
+#         # new regressor configuration
+#         self.regressor = LinearRegression(fit_intercept=self.params['fit_intercept'])
+# Linear regression using statsmodels
 class LinearRegressionNode(ScikitNode, RegressorMixin):
     def __init__(self,
                  rng_: rng_t,
                  params: Dict = {},
                  name: name_t = name_t('LinearRegression')):
         super().__init__(name)
-        rng = np.random.default_rng(rng_)
+        # no hyperparameters needed for OLS with intercept
+        self.regressor = None  # will be defined in fit method
+        self.results = None  # will be defined in fit method
 
-        # if params is an empty dictionary, then we will initialize the params
-        if params == {}:
-            self.params = {'fit_intercept': rng.choice([True, False])}
-        else:
-            assert len(params) == 1
-            assert 'fit_intercept' in params
-            self.params = params
-
-        self.regressor = LinearRegression(fit_intercept=self.params['fit_intercept'])
-
+    # defining the fit function using statsmodels OLS function
     def fit(self, X, y):
-        self.regressor.fit(X, y)
-        return self.regressor
+        X_ = sm.add_constant(X, has_constant='add')
+        # define the regressor using statsmodels OLS
+        self.regressor = sm.OLS(y, X_)
+        # fit the regressor
+        self.results = self.regressor.fit()
+        # return self
+        return self
 
     def predict(self, X):
-        return self.regressor.predict(X)
+        X_ = sm.add_constant(X, has_constant='add')
+        # use the fitted regressor to predict
+        return self.results.predict(X_)
+    
+    def score(self, X, y):
+        # use the fitted regressor to predict and calculate the r-squared score
+        X_ = sm.add_constant(X, has_constant='add')
+        y_pred = self.results.predict(X_)
+        # calculate the r-squared score
+        r2 = r2_score(y, y_pred)
+        # return the r-squared score of the fitted model
+        return r2
 
-    def transform(self, X):
+    def transform(self, X): # will not be called
         # for consistency with the abstract class, we use the regressor's prediction as the transform output
         return self.predict(X)
 
     def mutate(self, rng_: rng_t):
-        rng = np.random.default_rng(rng_)
+        pass
 
-        # randomly pick fit_intercept
-        self.params['fit_intercept'] = rng.choice([True, False])
-
-        # new regressor configuration
-        self.regressor = LinearRegression(fit_intercept=self.params['fit_intercept'])
 
 # CLASSIFICATION VERSION:
 # change to statsmodels
 # Logistic regression
-class LogisticRegressionNode(ScikitNode, ClassifierMixin):
+# class LogisticRegressionNode(ScikitNode, ClassifierMixin):
+#     def __init__(self,
+#                  rng_: rng_t,
+#                  params: Dict = {},
+#                  name: name_t = name_t('LogisticRegression')):
+#         super().__init__(name)
+#         rng = np.random.default_rng(rng_)
+
+#         # if params is an empty dictionary, then we will initialize the params
+#         if params == {}:
+#             self.params = {'fit_intercept': rng.choice([True, False])}
+#         else:
+#             assert len(params) == 1
+#             assert 'fit_intercept' in params
+#             self.params = params
+
+#         self.classifier = LogisticRegression(fit_intercept=self.params['fit_intercept'])
+
+#     def fit(self, X, y):
+#         self.classifier.fit(X, y)
+#         return self.classifier
+
+#     def predict(self, X):
+#         return self.classifier.predict(X)
+
+#     def transform(self, X):
+#         # for consistency with the abstract class, we use the regressor's prediction as the transform output
+#         return self.predict(X)
+
+#     def mutate(self, rng_: rng_t):
+#         rng = np.random.default_rng(rng_)
+
+#         # randomly pick fit_intercept
+#         self.params['fit_intercept'] = rng.choice([True, False])
+
+#         # new classifier configuration
+#         self.classifier = LogisticRegression(fit_intercept=self.params['fit_intercept'])
+# Logistic regression using statsmodels GLM
+class LogisticRegressionNode(ScikitNode, RegressorMixin):
     def __init__(self,
                  rng_: rng_t,
                  params: Dict = {},
                  name: name_t = name_t('LogisticRegression')):
         super().__init__(name)
-        rng = np.random.default_rng(rng_)
-
-        # if params is an empty dictionary, then we will initialize the params
-        if params == {}:
-            self.params = {'fit_intercept': rng.choice([True, False])}
-        else:
-            assert len(params) == 1
-            assert 'fit_intercept' in params
-            self.params = params
-
-        self.classifier = LogisticRegression(fit_intercept=self.params['fit_intercept'])
+        self.classifier = None
+        self.results = None
 
     def fit(self, X, y):
-        self.classifier.fit(X, y)
-        return self.classifier
+        X_ = sm.add_constant(X, has_constant='add')
+        self.classifier = sm.GLM(y, X_, family=sm.families.Binomial())
+        self.results = self.classifier.fit()
+        return self
 
     def predict(self, X):
-        return self.classifier.predict(X)
+        X_ = sm.add_constant(X, has_constant='add')
+        # Return predicted probabilities (values between 0 and 1)
+        return self.results.predict(X_)
+    
+    def predict_proba(self, X):
+        probs = self.predict(X)
+        return np.vstack([1 - probs, probs]).T
+
+    # def predict_class(self, X, threshold=0.5):
+    #     # Predict class labels (0 or 1) based on threshold
+    #     return (self.predict(X) >= threshold).astype(int)
+
+    # consider moving Tjur R2 score function here:
+    # def score(self, X, y):
 
     def transform(self, X):
-        # for consistency with the abstract class, we use the regressor's prediction as the transform output
         return self.predict(X)
 
     def mutate(self, rng_: rng_t):
-        rng = np.random.default_rng(rng_)
-
-        # randomly pick fit_intercept
-        self.params['fit_intercept'] = rng.choice([True, False])
-
-        # new classifier configuration
-        self.classifier = LogisticRegression(fit_intercept=self.params['fit_intercept'])
+        pass
 
 # ElasticNet regression
 class ElasticNetNode(ScikitNode, RegressorMixin):
@@ -2409,15 +2489,22 @@ class LDSelectorClassification(ScikitNode, TransformerMixin):
                     # NEW: try/except clause to prevent Logit crashing due to perfect multicollinearity or a feature perfectly predicting a class
                     try:
                         # 2. fit logit model (y must be 0/1 integers)
-                        res = sm.Logit(y, X_full).fit(disp=0)
+                        # res = sm.Logit(y, X_full).fit(disp=0)
+                        # NEW: sm.GLM() with binomial instead of sm.Logit()
+                        # add intercept/add_constant
+                        res = sm.GLM(y, X_full, family=sm.families.Binomial()).fit()
 
-                        # 3. pull coefficient and its SE for the SNP of interest
-                        beta     = res.params[-1]                   # last column = current SNP
-                        std_err  = res.bse[-1]
+                        # # 3. pull coefficient and its SE for the SNP of interest
+                        # beta     = res.params[-1]                   # last column = current SNP
+                        # std_err  = res.bse[-1]
 
-                        # 4. Wald statistic and two‑sided p‑value
-                        wald_stat = beta / std_err
-                        p_val     = 2 * (1 - stats.norm.cdf(abs(wald_stat)))
+                        # # 4. Wald statistic and two‑sided p‑value
+                        # wald_stat = beta / std_err
+                        # p_val     = 2 * (1 - stats.norm.cdf(abs(wald_stat)))
+                        # NEW: use wald_test() from statsmodels
+                        # 3. Wald test for the SNP coefficient
+                        wald_result = res.wald_test(f"{snp} = 0")
+                        p_val = float(wald_result.pvalue)  # ensure scalar
 
                         p_values.append(p_val)
                         tested_snps.append(snp)

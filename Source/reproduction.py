@@ -101,14 +101,17 @@ class Reproduction:
         # add a boolean flag within evolver.py
         # if statement: if regression use these nodes, if classification these nodes
         # NEW: if condition based on problem type to select root_node
+        # if problem_type == "regression":
+        #     root_node = rng.choice([LinearRegressionNode(rng_=rng),
+        #                             RandomForestRegressorNode(rng_=rng, seed=seed),
+        #                             SGDRegressorNode(rng_=rng, seed=seed),
+        #                             DecisionTreeRegressorNode(rng_=rng, seed=seed),
+        #                             ElasticNetNode(rng_=rng, seed=seed),
+        #                             SVRNode(rng_=rng),
+        #                             GradientBoostingRegressorNode(rng_=rng, seed=seed),
+        #                         ])
         if problem_type == "regression":
             root_node = rng.choice([LinearRegressionNode(rng_=rng),
-                                    RandomForestRegressorNode(rng_=rng, seed=seed),
-                                    SGDRegressorNode(rng_=rng, seed=seed),
-                                    DecisionTreeRegressorNode(rng_=rng, seed=seed),
-                                    ElasticNetNode(rng_=rng, seed=seed),
-                                    SVRNode(rng_=rng),
-                                    GradientBoostingRegressorNode(rng_=rng, seed=seed),
                                 ])
         elif problem_type == "classification":
             root_node = rng.choice([LogisticRegressionNode(rng_=rng),

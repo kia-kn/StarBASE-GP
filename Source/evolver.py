@@ -23,7 +23,7 @@ from sklearn.metrics import r2_score, make_scorer
 from .uni_node import UniNode
 from .uni_node import UniAdditiveNode, UniDominantNode, UniRecessiveNode, UniHeterosisNode, UniUnderDominantNode, UniOverDominantNode, UniSubAdditiveNode, UniSuperAdditiveNode, UniPAGERNode
 
-from .scikit_node import ScikitNode, LDSelector, LDSelectorClassification
+from .scikit_node import ScikitNode, LDSelector, LDSelectorClassification, LogisticRegressionNode
 from sklearn.pipeline import Pipeline as SklearnPipeline
 from sklearn.pipeline import FeatureUnion
 from sklearn.linear_model import LinearRegression, LogisticRegression
@@ -36,6 +36,8 @@ from sklearn.exceptions import NotFittedError, ConvergenceWarning
 import matplotlib.pyplot as plt
 import time
 import warnings
+import datatable as dt
+from datatable import f
 
 # to not show runtime warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -111,7 +113,9 @@ def ray_uni_eval(x_train,
         skl_pipeline_fitted = skl_pipeline.fit(x_train, y_train)
 
         # get score
-        r2 = skl_pipeline_fitted.score(x_val, y_val)
+        # r2 = skl_pipeline_fitted.score(x_val, y_val)
+        # NEW: select encoder based on training R2, not validation R2
+        r2 = skl_pipeline_fitted.score(x_train, y_train)
 
         # check if this is the best lo
         if r2 > best_res:
@@ -127,6 +131,7 @@ def ray_uni_eval_classification(x_train,
                 y_train,
                 x_val,
                 y_val,
+                rng_,
                 snp_name: snp_name_t,
                 snp_pos: snp_hub_pos_t) -> Tuple[np.float32, np.str_, np.str_]:
     # hold results
@@ -155,7 +160,9 @@ def ray_uni_eval_classification(x_train,
 
         # add logistic regressor
         # change to statsmodels, regressor name to classifier
-        steps.append(('regressor', LogisticRegression()))
+        # steps.append(('regressor', LogisticRegression()))
+        # NEW: use the LogisticRegressionNode from scikit_node.py
+        steps.append(('regressor', LogisticRegressionNode(rng=1)))
 
         # create the pipeline
         skl_pipeline = SklearnPipeline(steps=steps)
@@ -170,7 +177,9 @@ def ray_uni_eval_classification(x_train,
             y = np.asarray(y) 
             return proba_pos[y == 1].mean() - proba_pos[y == 0].mean()
         
-        r2 = tjur_r2(skl_pipeline_fitted, x_val, y_val)
+        # r2 = tjur_r2(skl_pipeline_fitted, x_val, y_val)
+        # NEW: select encoder based on training R2, not validation R2
+        r2 = tjur_r2(skl_pipeline_fitted, x_train, y_train)
 
         # # *** just for debugging
         # if r2 > 0.0001:
@@ -247,7 +256,9 @@ def ray_eval_pipeline(x_train,
         # add the selector node
         steps.append(('selector', selector_node))
         # pass to regressor
-        steps.append(('regressor', root_node.regressor))
+        # steps.append(('regressor', root_node.regressor))
+        # NEW: after changing to statsmodels, alter this step syntax:
+        steps.append(('regressor', root_node))
         # create the pipeline without refitting the regressor
         pipeline = SklearnPipeline(steps=steps)
         pipeline.fit(x_train_transformed_df, y_train)
@@ -334,7 +345,9 @@ def ray_eval_pipeline_classification(x_train,
         # add the selector node
         steps.append(('selector', selector_node))
         # pass to regressor
-        steps.append(('classifier', root_node.classifier))
+        # steps.append(('classifier', root_node.classifier))
+        # NEW: after changing to statsmodels, alter this step in Pipeline:
+        steps.append(('classifier', root_node))
         # create the pipeline without refitting the regressor
         pipeline = SklearnPipeline(steps=steps)
         pipeline.fit(x_train_transformed_df, y_train)
@@ -484,25 +497,48 @@ class EA:
         if os.path.isfile(path) == False:
             # load the data
             exit('Error: The path provided is not valid. Please provide a valid path to the data file.', -1)
+        
+        # NEW PT2: using datatable
+        # load the entire dataset using datatable
+        data_dt = dt.fread(path)    
+        print("Loaded data with datatable. First 5 column names:", data_dt.names[:5], flush=True)
 
-
-        # get pandas dataframe snp names without loading all data
-        self.snp_labels = pd.read_csv(path, nrows=0).columns.tolist()
+        # remove 'chr' from column names
+        data_dt.names = [name.replace("chr", "") for name in data_dt.names]
+        print("Column names after removing 'chr':", data_dt.names[:5], flush=True)
 
         # check if the target label is valid
-        if target_label not in self.snp_labels:
+        if target_label not in data_dt.names:
             exit('Error: The target label provided is not valid. Please provide a valid target label.', -1)
-
-        # remove target label from snp labels
-        self.snp_labels.remove(target_label)
-
-        # convert python strings into numpy strings
-        self.snp_labels = np.array(self.snp_labels, dtype=np.str_)
+        
+        # Extract target column and SNP columns
         self.target_label = np.str_(target_label)
+        self.snp_labels = [name for name in data_dt.names if name != target_label]
+        self.snp_labels = np.array(self.snp_labels, dtype=np.str_)
 
-        # load the data
-        all_x = pd.read_csv(filepath_or_buffer=path, usecols=self.snp_labels)
-        all_y = pd.read_csv(filepath_or_buffer=path, usecols=[self.target_label]).values.ravel()
+        # Convert to pandas DataFrame for compatibility with downstream logic
+        all_x = data_dt[:, [f[name] for name in self.snp_labels]].to_pandas()
+        all_y = data_dt[:, f[self.target_label]].to_pandas().values.ravel()
+        # END NEW PT2
+
+
+        # # get pandas dataframe snp names without loading all data
+        # self.snp_labels = pd.read_csv(path, nrows=0).columns.tolist()
+
+        # # check if the target label is valid
+        # if target_label not in self.snp_labels:
+        #     exit('Error: The target label provided is not valid. Please provide a valid target label.', -1)
+
+        # # remove target label from snp labels
+        # self.snp_labels.remove(target_label)
+
+        # # convert python strings into numpy strings
+        # self.snp_labels = np.array(self.snp_labels, dtype=np.str_)
+        # self.target_label = np.str_(target_label)
+
+        # # load the data
+        # all_x = pd.read_csv(filepath_or_buffer=path, usecols=self.snp_labels)
+        # all_y = pd.read_csv(filepath_or_buffer=path, usecols=[self.target_label]).values.ravel()
 
         # check if the data was loaded correctly
         all_x, all_y = self.check_dataset(all_x, all_y)
@@ -514,6 +550,23 @@ class EA:
         # NEW: commenting these lines out temporarily because simulated data already comes in the form 0, 0.5, 1
         # all_x = all_x.replace(1, 0.5)
         # all_x = all_x.replace(2, 1)
+
+        # NEW PT2:
+        # checking the additive encoding of the data, if 0,1,2 detected, we will transform it to dosage encoding (0,0.5,1)
+        # Check unique values across all SNP columns
+        unique_vals = pd.unique(all_x.values.ravel())
+
+        # Convert to a set for comparison
+        unique_vals_set = set(unique_vals)
+
+        # Check if the data is in {0, 1, 2} encoding
+        if unique_vals_set.issubset({0, 1, 2}):
+            print("Detected additive encoding (0,1,2). Transforming to dosage encoding (0,0.5,1)...", flush=True)
+            all_x = all_x.replace(1, 0.5)
+            all_x = all_x.replace(2, 1)
+        else:
+            print("Detected additive encoding (0,0.5,1). No transformation applied.", flush=True)
+        # END NEW PT2
 
         # NEW: when user uploads dataset, see if its target is classification or continuous
         if pd.api.types.is_numeric_dtype(all_y):
@@ -643,7 +696,13 @@ class EA:
 
             # how many pipelines are in the population
             print('Population size:', len(self.population), flush=True)
-            assert(0 < len(self.population) <= self.pop_size)
+
+            # assert(0 < len(self.population) <= self.pop_size)
+            # NEW PT2:
+            if g == 0:
+                assert(0 < len(self.population) <= (self.pop_size * 2))
+            else:
+                assert(0 < len(self.population) <= self.pop_size)
 
             # get the size of the front 0 after each generation
             _, rank = nsga.non_dominated_sorting(obj_scores=self.get_pipeline_scores(self.population, weights=(r2_t(1.0), feature_cnt_t(-1))))
@@ -678,7 +737,12 @@ class EA:
                                                            order=var_order,
                                                            problem_type=self.problem_type)
             # make sure we have the correct number of competing solutions
-            assert len(offspring) + len(self.population) <= 3 * self.pop_size
+            # assert len(offspring) + len(self.population) <= 3 * self.pop_size
+            # NEW PT2: if gen 0, can have X 4 after producing offspring (because initialize_pop is X 2 pop_size); else X 3
+            if g == 0:
+                assert len(offspring) + len(self.population) <= 4 * self.pop_size
+            else:
+                assert len(offspring) + len(self.population) <= 3 * self.pop_size 
 
             # process offspring: evaluation interactions and remove bad interactions
             offspring = self.process_offspring(offspring, snp_hub_gen_t(g))
@@ -687,7 +751,12 @@ class EA:
             offspring = self.evaluation(offspring, snp_hub_gen_t(g))
 
             # must be less than or equal because of potential negative r2 offspring pipelines
-            assert (0 < len(offspring) + len(self.population) <= 3 * self.pop_size)
+            # assert (0 < len(offspring) + len(self.population) <= 3 * self.pop_size)
+            # NEW PT2: if gen 0, can have X 4 after producing offspring (because initialize_pop is X 2 pop_size); else X 3
+            if g == 0:
+                assert (0 < len(offspring) + len(self.population) <= 4 * self.pop_size)
+            else:
+                assert (0 < len(offspring) + len(self.population) <= 3 * self.pop_size)
 
             # will remove any bad pipeline from both the population and offspring
             offspring = self.remove_bad_pipelines(offspring)
@@ -846,7 +915,9 @@ class EA:
         # check the init mode
         assert type(self.rand_init)==bool
         if self.rand_init==True: # initial population will be assigned randomly
-            for _ in range(self.pop_size):
+            # for _ in range(self.pop_size):
+            # NEW PT2: make double the pop size pipelines
+            for _ in range(self.pop_size * 2):
                 # holds all univariate snps/nodes in a pipeline
                 # set to make sure we don't have duplicates
                 snps = set()
@@ -866,7 +937,9 @@ class EA:
                 pop_univariate_sets.append(snps)
 
         elif self.rand_init==False: # initial population will be assigned uniformly
-            for _ in range(self.pop_size):
+            # for _ in range(self.pop_size):
+            # NEW PT2: make double the pop size pipelines:
+            for _ in range(self.pop_size * 2):
                 snps = set()
                 # add a random number of snps to the set
                 uni_cnt = int(self.uni_cnt_max)
@@ -891,7 +964,9 @@ class EA:
                 # add to the population
                 pop_univariate_sets.append(snps)
         # make sure we have the correct number of snps
-        assert len(pop_univariate_sets) == self.pop_size
+        # assert len(pop_univariate_sets) == self.pop_size
+        # NEW PT2: self.pop_size X 2 now for initial pop
+        assert len(pop_univariate_sets) == (self.pop_size * 2)
 
         # evaluate all unseen snps
         self.evaluate_unseen_snps(unseen_snps, snp_hub_gen_t(0))
@@ -913,13 +988,17 @@ class EA:
             self.population.append(self.repoduction.generate_random_pipeline(self.rng, good_snps, int(self.seed), self.problem_type))
 
         # make sure we have the correct number of pipelines
-        assert (0 < len(self.population) <= self.pop_size)
+        # assert (0 < len(self.population) <= self.pop_size)
+        # NEW PT2: double the pop size/number of pipelines for initial population
+        assert (0 < len(self.population) <= (self.pop_size * 2))
 
         # evaluate the initial population
         self.population = self.evaluation(self.population, snp_hub_gen_t(0))
 
         # make sure we have the correct number of pipelines
-        assert (0 < len(self.population) <= self.pop_size)
+        # assert (0 < len(self.population) <= self.pop_size)
+        # NEW PT2: double the pop size/number of pipelines for initial population
+        assert (0 < len(self.population) <= (self.pop_size * 2))
 
         return
 
@@ -980,6 +1059,7 @@ class EA:
                                                     y_train = self.y_train_id,
                                                     x_val = self.X_val_id,
                                                     y_val = self.y_val_id,
+                                                    rng_ = self.rng,
                                                     snp_name = snp_name,
                                                     snp_pos = self.hubs.get_snp_pos(snp_name)))
         assert len(ray_jobs) == len(unseen_snps)
@@ -1367,7 +1447,7 @@ class EA:
             uni_snps_df = uni_snps_df[uni_snps_df['feature'].isin(features_final)]
 
             # change the feature names to have the inheritance information - from the filtered uni_snps_df
-            new_column_names = [ f'{row["feature"]}_{row["inheritence"]}' for _, row in uni_snps_df.iterrows()]
+            new_column_names = [ f'{"chr" + row["feature"]}_{row["inheritence"]}' for _, row in uni_snps_df.iterrows()]
 
             # construct the snp_union FeatureUnion - to transform the training and test datasets to have the encoded SNPs
             snp_union = FeatureUnion([(uni_node.name, uni_node) for uni_node in uni_nodes])
@@ -1389,9 +1469,11 @@ class EA:
             # create the pipeline without refitting the regressor
             # NEW: regressor/classifier distinction
             if self.problem_type == "regression":
-                model = pipeline.get_root_node().regressor
+                model = pipeline.get_root_node()
+                # model = pipeline.get_root_node().regressor
             elif self.problem_type == "classification":
-                model = pipeline.get_root_node().classifier
+                model = pipeline.get_root_node()
+                # model = pipeline.get_root_node().classifier
             fitted_model = model.fit(uni_features_train, self.y_train)
 
             # get permutation importance
@@ -1424,6 +1506,8 @@ class EA:
             perm_imp_df['Pipeline_R2'] = pipeline_r2
             perm_imp_df['Pipeline_Feature_Count'] = pipeline_feature_count
             perm_imp_df['Pipeline_Selector'] = pipeline.get_selector_node().name
+            # NEW PT2: ADD THIS:
+            perm_imp_df['Pipeline_Selector_Parameters'] = str(pipeline.get_selector().params)
             perm_imp_df['Pipeline_Root'] = pipeline.get_root_node().name
 
             # adding the individual pipeline PFI to the all_perm_imp_df
