@@ -1507,7 +1507,8 @@ class EA:
             perm_imp_df['Pipeline_Feature_Count'] = pipeline_feature_count
             perm_imp_df['Pipeline_Selector'] = pipeline.get_selector_node().name
             # NEW PT2: ADD THIS:
-            perm_imp_df['Pipeline_Selector_Parameters'] = str(pipeline.get_selector().params)
+            # perm_imp_df['Pipeline_Selector_Parameters'] = str(pipeline.get_selector().params)
+            perm_imp_df['Pipeline_Selector_Parameters'] = str(pipeline.get_selector_node().params)
             perm_imp_df['Pipeline_Root'] = pipeline.get_root_node().name
 
             # adding the individual pipeline PFI to the all_perm_imp_df

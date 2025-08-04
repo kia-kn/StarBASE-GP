@@ -2382,6 +2382,10 @@ class LDSelectorClassification(ScikitNode, TransformerMixin):
         column_names = X_original.columns
         chr, pos = [], []
 
+        # # initialize the snp_details_after_ld dictionary to have every SNP and set False, "", self.threshold, self.genomic_distance, anchor
+        # for snp in column_names:
+        #     snp_details_after_ld[snp] = {"pruned": False, "reason": "", "threshold": self.threshold, "genomic_distance": self.genomic_distance}
+
         for snp in column_names:
             chr.append(int(snp.split('.')[0]))
             pos.append(int(snp.split('.')[1]))
