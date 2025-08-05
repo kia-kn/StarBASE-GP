@@ -339,7 +339,7 @@ def ray_eval_pipeline_classification(x_train,
             print("No features selected after LD node")
             # return r2_t(-1.0), feature_cnt_t(0), pop_id, False, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], [] # all SNPs in the pipeline were pruned out by LD, should not be happening but just a check
             # NEW PT2: ld_node.snp_details_after_ld; and removing False?
-            print("Type of snp_details_after_ld on line 342 before return:", type(ld_node.snp_details_after_ld), flush=True)
+            logging.warning(f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 342: {type(ld_node.snp_details_after_ld)}")
             return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, []
         x_val_transformed_df = pd.DataFrame(x_val_transformed_df[selected_features_after_ld], columns=selected_features_after_ld)
     except Exception as e:
@@ -365,7 +365,7 @@ def ray_eval_pipeline_classification(x_train,
         logging.error(f"Exception while fitting pipeline after LD: {e}")
         # return r2_t(-1.0), feature_cnt_t(0), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], [] # pipeline fails but still update the hub with LD node results
         # NEW PT2:
-        print("Type of snp_details_after_ld on line 368 before return:", type(ld_node.snp_details_after_ld), flush=True)
+        logging.warning(f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 368: {type(ld_node.snp_details_after_ld)}")
         return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, []
 
     try:
@@ -388,13 +388,13 @@ def ray_eval_pipeline_classification(x_train,
         logging.error(f"Error while scoring or getting feature count: {e}")
         # return r2_t(-1.0), feature_cnt_t(0), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], []
         # NEW PT2:
-        print("Type of snp_details_after_ld on line 391 before return:", type(ld_node.snp_details_after_ld), flush=True)
+        logging.warning(f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 391: {type(ld_node.snp_details_after_ld)}")
         return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, []
 
     # return the pipeline
     # return r2_t(r2_score), feature_cnt_t(feature_count), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], features_final
     # NEW PT2:
-    print("Type of snp_details_after_ld on line 397 before return:", type(ld_node.snp_details_after_ld), flush=True)
+    logging.warning(f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 397: {type(ld_node.snp_details_after_ld)}")
     return r2_t(r2_score), feature_cnt_t(feature_count), pop_id, ld_node.snp_details_after_ld, features_final
 
 @typechecked # for debugging purposes
