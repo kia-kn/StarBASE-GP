@@ -1182,6 +1182,7 @@ class EA:
             # r2, feature_count, pop_id, pruned, feature_names = ray.get(finished)[0]
             # NEW PT2:
             r2, feature_count, pop_id, snp_details_after_ld, feature_names = ray.get(finished)[0]
+            print("Type of snp_details_after_ld on line 1185 before return:", type(snp_details_after_ld), flush=True)
             # update the pipeline
             pop[pop_id].set_traits([r2, feature_count, set(np.str_(s) for s in feature_names)])
 
