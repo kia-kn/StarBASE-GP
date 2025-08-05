@@ -5,7 +5,7 @@
 #####################################################################################################
 
 import numpy as np
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Dict
 from typeguard import typechecked
 import numpy.typing as npt
 from typing import List
@@ -48,6 +48,11 @@ snp_hub_res_t = np.float32
 snp_hub_enc_t = np.str_
 # corresponding index of the snp position in the bin
 snp_hub_idx_t = np.uint16
+
+# LD threshold type
+snp_hub_ld_t = np.float32
+# LD genomic distance type
+snp_hub_ld_gen_t = np.int32
 
 ### Bin Hub Types
 
@@ -195,6 +200,10 @@ class SnpHub:
                 pruned_pos = 5 # position for the pruned flag in hub value list
               gen_seen_pos = 6 # position for the general seen flag in hub value list
             gen_pruned_pos = 7 # position for the general pruned flag in hub value list
+            pruned_reason = 8 # position for the reason of prunning in hub value list
+              ld_threshold = 9 # position for the LD threshold in hub value list
+       ld_genomic_distance = 10 # position for the genomic distance in hub value list
+                anchor_snp = 11 # position for the anchor snp that pruned the snp in hub value list
             """
 
             # {snp: [res(np.float32),bin(np.uint32),idx(np.uint32),
@@ -203,6 +212,7 @@ class SnpHub:
             self.hub = {}
 
         # will add snp, sum, bin, pos， idx, res, typ to the hub
+        # NEW PT2: added 4 new parameters to add_to_hub()
         def add_to_hub(self,
                        snp: snp_t,
                        res: snp_hub_res_t,
@@ -212,7 +222,11 @@ class SnpHub:
                        seen=False,
                        prunned=False,
                        gen_seen: snp_hub_gen_t=snp_hub_gen_t(-1),
-                       gen_pruned:snp_hub_gen_t=snp_hub_gen_t(-1)) -> None:
+                       gen_pruned:snp_hub_gen_t=snp_hub_gen_t(-1),
+                       pruned_reason: np.str_ = '',
+                       ld_threshold: snp_hub_ld_t = snp_hub_ld_t(-1),
+                       ld_genomic_distance: snp_hub_ld_gen_t = snp_hub_ld_gen_t(-1),
+                       anchor_snp: snp_t = snp_t('')) -> None:
             """
             will take in a snp, sum, cnt, bin, and pos and add it to the hub
 
@@ -226,10 +240,16 @@ class SnpHub:
                 (5) prunned (bool): has this snp been prunned, default = False
                 (6) gen_seen (snp_hub_gen_t): generation seen, default = -1
                 (7) gen_prunned (snp_hub_gen_t): generation prunned, default = -1
+                (8) pruned_reason (np.str_): reason for pruning, default = ''
+                (9) ld_threshold (snp_hub_ld_t): LD threshold, default = -1
+                (10) ld_genomic_distance (snp_hub_ld_gen_t): genomic distance, default = -1
+                (11) anchor_snp (snp_t): anchor SNP used for LD pruning, default = ''
             """
 
             # add to hub
-            self.hub[snp] = [res,idx,pos,enc,seen,prunned,gen_seen,gen_pruned]
+            # self.hub[snp] = [res,idx,pos,enc,seen,prunned,gen_seen,gen_pruned]
+            # NEW PT2: integrate 4 new parameters (more details on snp and if/how it was pruned)
+            self.hub[snp] = [res,idx,pos,enc,seen,prunned,gen_seen,gen_pruned,pruned_reason,ld_threshold,ld_genomic_distance,anchor_snp]
             return
 
         # get snp result r^2
@@ -324,6 +344,19 @@ class SnpHub:
             elif problem_type == "classification":
                 if value < 0.0001:
                     self.flip_prunned(snp, gen_seen)
+
+            return
+        # NEW PT2: add ld_details function
+        # to update the details of the snp after LD pruning - add the anchor snp
+        def add_ld_details(self, snp: snp_t, reason: np.str_, threshold: snp_hub_ld_t, genomic_distance: snp_hub_ld_gen_t, anchor_snp: snp_t) -> None:
+            # make sure the snp is in the hub
+            assert snp in self.hub
+
+            # update the details
+            self.hub[snp][8] = reason
+            self.hub[snp][9] = threshold
+            self.hub[snp][10] = genomic_distance
+            self.hub[snp][11] = anchor_snp
 
             return
 
@@ -478,6 +511,7 @@ class SnpHub:
             assert self.order.snp_chrm_pos(s[0])[1] == self.order.order[self.order.snp_chrm_pos(s[0])[0]][s[1]]
 
             # add snp to hub with all its data
+            # NEW PT2: add 4 new arguments to add_to_hub()
             self.hub.add_to_hub(snp=s[0],
                                 res=snp_hub_res_t(-1.0),
                                 idx=snp_hub_idx_t(s[1]),
@@ -486,7 +520,11 @@ class SnpHub:
                                 seen=False,
                                 prunned=False,
                                 gen_seen=snp_hub_gen_t(-1),
-                                gen_pruned=snp_hub_gen_t(-1))
+                                gen_pruned=snp_hub_gen_t(-1),
+                                pruned_reason=np.str_(''),
+                                ld_threshold=snp_hub_ld_t(-1),
+                                ld_genomic_distance=snp_hub_ld_gen_t(-1),
+                                anchor_snp=snp_t(''))
         print('SNP Hub Initialized')
         return
 
@@ -499,6 +537,7 @@ class SnpHub:
         return self.hub.get_uni_res(snp)
 
     # save the epi_hub and snp_hub to a file
+    # NEW PT2: add 4 new parameters
     def save_hubs(self, save_dir: str) -> None:
         """
         (k) snp (snp_t): chrm.pos string
@@ -510,11 +549,16 @@ class SnpHub:
         (5) prunned (bool): has this snp been prunned, default = False
         (6) gen_seen (snp_hub_gen_t): generation seen, default = -1
         (7) gen_prunned (snp_hub_gen_t): generation prunned, default = -1
+        (8) pruned_reason (np.str_): position for the reason why the snp was pruned, if applicable
+        (9) ld_threshold (snp_hub_ld_t): position for the LD threshold used for pruning, if applicable
+        (10) ld_genomic_distance (snp_hub_ld_gen_t): position for the genomic distance used for LD pruning, if applicable
+        (11) anchor_snp (snp_t): position for the anchor SNP used for LD pruning, if applicable
         """
 
         # Save snp hub with headers
         # for everything in row 0 append chr
         snp_data = []
+        # NEW PT2: 4 new paramaters at end
         for k, v in self.hub.hub.items():
             # add chr to k here
             # k: snp (row[0])
@@ -526,7 +570,11 @@ class SnpHub:
             # v[5]: prunned (row[6])
             # v[6]: gen_seen (row[7])
             # v[7]: gen_prunned (row[8])
-            snp_data.append([k, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]])
+            # v[8]: pruned_reason (row[9])
+            # v[9]: ld_threshold (row[10])
+            # v[10]: ld_genomic_distance (row[11])
+            # v[11]: anchor_snp (row[12])
+            snp_data.append([k, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11]])
 
         # Sort snp_data by the second column (AVG_R2)
         snp_data.sort(key=lambda x: x[1], reverse=True)  # reverse=True for descending order
@@ -534,7 +582,7 @@ class SnpHub:
         # Write snp hub to file
         with open(save_dir+"snp_hub.csv", 'w') as f:
             # Write the headers for the snp_file
-            f.write("snp,chr,bp,r2,position,encoding,seen,pruned,gen_seen,gen_pruned\n")
+            f.write("snp,chr,bp,r2,position,encoding,seen,pruned,gen_seen,gen_pruned,pruned_reason,ld_threshold,ld_genomic_distance,anchor_snp\n")
             for row in snp_data:
                 # split snp into chromosome and position
                 chrom, pos = row[0].split('.')
@@ -543,7 +591,10 @@ class SnpHub:
                 snp_name = f"chr{row[0]}"
                 # f.write(f"{snp_name},{chrom},{pos},{row[1]},{row[2]},{row[4]},{row[5]},{row[6]},{row[7]},{row[8]},{row[9]}\n")
                 # Removing row[9] for now because didn't have that above:
-                f.write(f"{snp_name},{chrom},{pos},{row[1]},{row[2]},{row[4]},{row[5]},{row[6]},{row[7]},{row[8]}\n")
+                # f.write(f"{snp_name},{chrom},{pos},{row[1]},{row[2]},{row[4]},{row[5]},{row[6]},{row[7]},{row[8]}\n")
+                # NEW PT2: adding 4 new arguments
+                f.write(f"{snp_name},{chrom},{pos},{row[1]},{row[2]},{row[4]},{row[5]},{row[6]},{row[7]},{row[8]},{row[9]},{row[10]},{row[11]},{row[12]}\n")
+
                 
 
         # save csv with both seen and not prunned snps
@@ -923,7 +974,8 @@ class SnpHub:
         return self.hub.has_been_pruned(snp)
 
     # process the prunned snps
-    def process_pruned_snps(self, snps: Set[snp_t], gen_pruned: snp_hub_gen_t) -> None:
+    # NEW PT2: add snp_details_after_ld as a parameter
+    def process_pruned_snps(self, snps: Set[snp_t], snp_details_after_ld: Dict[snp_t, Dict], gen_pruned: snp_hub_gen_t) -> None:
         # go through each snp and update the hub
         for snp in snps:
             # check to make sure we have not prunned this snp before
@@ -931,6 +983,15 @@ class SnpHub:
 
             # flip snp to pruned
             self.hub.flip_prunned(snp, gen_pruned)
+            # NEW PT2
+            # add ld details to the snp hub
+            self.hub.add_ld_details(
+                snp, 
+                snp_details_after_ld[snp]["reason"],
+                snp_details_after_ld[snp]["threshold"],
+                snp_details_after_ld[snp]["genomic_distance"],
+                snp_details_after_ld[snp]["anchor_snp"]
+            )
 
             # delete snp from non pruned
             self.consideration_hub.remove_snp(snp)

@@ -283,6 +283,7 @@ def ray_eval_pipeline(x_train,
 @ray.remote
 # all univariate snps/nodes with their best lo goes to the LD operator, then the feature selector and finally the classifier
 # NEW: added LDSelectorClassification instead of LDSelector
+# NEW PT2: instead of "Tuple[np.float32, np.uint16, np.int16, List[np.str_], List[np.str_]]", returns "Tuple[np.float32, np.uint16, np.int16, Dict[np.str_, Dict], List[np.str_]]"
 def ray_eval_pipeline_classification(x_train,
                       y_train,
                       x_val,
@@ -291,8 +292,8 @@ def ray_eval_pipeline_classification(x_train,
                       selector_node: ScikitNode,
                       ld_node: LDSelectorClassification,
                       root_node: ScikitNode,
-                      pop_id: np.int16,        #    r2, feature count, pop_id, pruned, snp_name_after_ld
-                      snp_r2_set: Set) -> Tuple[np.float32, np.uint16, np.int16, List[np.str_], List[np.str_]]:
+                      pop_id: np.int16,        #    r2, feature count, pop_id, details after ld node, snp_name_after_ld
+                      snp_r2_set: Set) -> Tuple[np.float32, np.uint16, np.int16, Dict[np.str_, Dict], List[np.str_]]:
 
     # make dictionary to hold the snp r2 scores
     snp_r2_dict = {p[0]: p[1] for p in snp_r2_set}
@@ -311,7 +312,9 @@ def ray_eval_pipeline_classification(x_train,
     except Exception as e:
         # Catch all other exceptions and log error with relevant context
         logging.error(f"Exception while fitting SNP union step: {e}")
-        return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
+        # return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
+        # NEW PT2: return dict
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, []
 
     # use the transform function get the best lo encoded snps for both training and testing dataset
     x_train_transformed = pipeline_fitted.transform(x_train)
@@ -320,7 +323,9 @@ def ray_eval_pipeline_classification(x_train,
     x_train_transformed_df = pd.DataFrame(x_train_transformed, columns=uni_node_names)
     x_val_transformed_df = pd.DataFrame(x_val_transformed, columns=uni_node_names)
     if x_train_transformed_df.empty:
-        return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
+        # return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
+        # NEW PT2: return dict
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, []
 
     x_train_original_df = pd.DataFrame(x_train, columns=uni_node_names)
 
@@ -336,7 +341,9 @@ def ray_eval_pipeline_classification(x_train,
         x_val_transformed_df = pd.DataFrame(x_val_transformed_df[selected_features_after_ld], columns=selected_features_after_ld)
     except Exception as e:
         logging.error(f"Exception while fitting LD node: {e}")
-        return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
+        # return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
+        # NEW PT2: return dict
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, []
 
     # adding the selector and regressor nodes
     try:
@@ -353,7 +360,9 @@ def ray_eval_pipeline_classification(x_train,
         pipeline.fit(x_train_transformed_df, y_train)
     except Exception as e:
         logging.error(f"Exception while fitting pipeline after LD: {e}")
-        return r2_t(-1.0), feature_cnt_t(0), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], [] # pipeline fails but still update the hub with LD node results
+        # return r2_t(-1.0), feature_cnt_t(0), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], [] # pipeline fails but still update the hub with LD node results
+        # NEW PT2:
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, []
 
     try:
         # r2_score = pipeline.score(x_val_transformed_df, y_val)
@@ -373,10 +382,14 @@ def ray_eval_pipeline_classification(x_train,
             features_final = features_final.tolist()
     except Exception as e:
         logging.error(f"Error while scoring or getting feature count: {e}")
-        return r2_t(-1.0), feature_cnt_t(0), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], []
+        # return r2_t(-1.0), feature_cnt_t(0), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], []
+        # NEW PT2:
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, []
 
     # return the pipeline
-    return r2_t(r2_score), feature_cnt_t(feature_count), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], features_final
+    # return r2_t(r2_score), feature_cnt_t(feature_count), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], features_final
+    # NEW PT2:
+    return r2_t(r2_score), feature_cnt_t(feature_count), pop_id, ld_node.snp_details_after_ld, features_final
 
 @typechecked # for debugging purposes
 class EA:
@@ -1154,18 +1167,30 @@ class EA:
 
         # keep track of LD prunned snps
         pruned_snps = set()
+        # will hold the snp details after LD for each pipeline
+        snp_details_per_snp = {}
 
         # process results as they come in
         while len(ray_jobs) > 0:
             finished, ray_jobs = ray.wait(ray_jobs)
-            r2, feature_count, pop_id, pruned, feature_names = ray.get(finished)[0]
+            # r2, feature_count, pop_id, pruned, feature_names = ray.get(finished)[0]
+            # NEW PT2:
+            r2, feature_count, pop_id, snp_details_after_ld, feature_names = ray.get(finished)[0]
             # update the pipeline
             pop[pop_id].set_traits([r2, feature_count, set(np.str_(s) for s in feature_names)])
 
-            pruned_snps.update(set(snp for snp in pruned if not self.hubs.has_been_pruned(snp)))
+            # pruned_snps.update(set(snp for snp in pruned if not self.hubs.has_been_pruned(snp)))
+            # NEW PT2:
+            # update the prined snps based on the SNP details after LD
+            for snp, details in snp_details_after_ld.items():
+                if details['pruned'] == True and not self.hubs.has_been_pruned(snp):
+                    pruned_snps.add(snp)
+                    snp_details_per_snp[snp] = details
 
         # update the SnpHub with the prunned snps
-        self.hubs.process_pruned_snps(pruned_snps, gen_pruned)
+        # self.hubs.process_pruned_snps(pruned_snps, gen_pruned)
+        # NEW PT2: add snp_details_per_snp
+        self.hubs.process_pruned_snps(pruned_snps, snp_details_per_snp, gen_pruned)
 
         # collect only pipelines that do not consist of only pruned snps
         new_pop = []

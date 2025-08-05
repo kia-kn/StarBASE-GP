@@ -2382,9 +2382,10 @@ class LDSelectorClassification(ScikitNode, TransformerMixin):
         column_names = X_original.columns
         chr, pos = [], []
 
-        # # initialize the snp_details_after_ld dictionary to have every SNP and set False, "", self.threshold, self.genomic_distance, anchor
-        # for snp in column_names:
-        #     snp_details_after_ld[snp] = {"pruned": False, "reason": "", "threshold": self.threshold, "genomic_distance": self.genomic_distance}
+        # NEW PT2:
+        # initialize the snp_details_after_ld dictionary to have every SNP and set False, "", self.threshold, self.genomic_distance, anchor_snp
+        for snp in column_names:
+            snp_details_after_ld[snp] = {"pruned": False, "reason": "", "threshold": self.threshold, "genomic_distance": self.genomic_distance, "anchor_snp": ""}
 
         for snp in column_names:
             chr.append(int(snp.split('.')[0]))
@@ -2398,8 +2399,9 @@ class LDSelectorClassification(ScikitNode, TransformerMixin):
         chromosomes = genotype_df_columns['chrom'].unique()
 
         marginal_r2 = {snp: snp_r2_dict[snp] for snp in column_names}
-        for snp in column_names:
-            snp_details_after_ld[snp] = True
+        # NEW PT2: commenting these 2 lines below out
+        # for snp in column_names:
+        #     snp_details_after_ld[snp] = True
 
         for chrom in chromosomes:
             chr_snps_df = genotype_df_columns[genotype_df_columns['chrom'] == chrom]
@@ -2428,7 +2430,16 @@ class LDSelectorClassification(ScikitNode, TransformerMixin):
                 if len(group) == 1:
                     snp = group[0]
                     final_selected_snps.append(snp)
-                    snp_details_after_ld[snp] = "Single SNP in group, retained by default"
+                    # NEW PT2: commenting below out
+                    # snp_details_after_ld[snp] = "Single SNP in group, retained by default"
+                    # NEW PT2: updating SNP details for 1-SNP LD groups:
+                    snp_details_after_ld[snp] = {
+                        "pruned": False,
+                        "reason": "",
+                        "threshold": self.threshold,
+                        "genomic_distance": self.genomic_distance,
+                        "anchor_snp": "Only SNP in group"
+                    }
                     continue
                 group_df = genotype_df_original[group]
                 snp_list = group_df.columns.tolist()
@@ -2452,13 +2463,31 @@ class LDSelectorClassification(ScikitNode, TransformerMixin):
                                 ld_removed_details[snp1] = f"Removed due to high LD (R²={ld_value:.3f}) with {snp2}"
                 
                 non_pruned_snps_in_group = [s for s in snp_list if s not in ld_removed_snps_in_group] # remaining SNPs after LD pruning
+                # NEW PT2: update the snp_details_after_ld dictionary for the pruned SNPs
+                for snp in ld_removed_snps_in_group:
+                    snp_details_after_ld[snp] = {
+                        "pruned": True,
+                        "reason": "LD",
+                        "threshold": self.threshold,
+                        "genomic_distance": self.genomic_distance,
+                        "anchor_snp": ld_removed_details[snp]
+                    }
 
                 if len(non_pruned_snps_in_group) == 0:
                     continue
                 if len(non_pruned_snps_in_group) == 1:
                     snp = non_pruned_snps_in_group[0]
                     final_selected_snps.append(snp)
-                    snp_details_after_ld[snp] = "Single SNP after LD pruning, retained by default"
+                    # NEW PT2: commenting below out
+                    # snp_details_after_ld[snp] = "Single SNP after LD pruning, retained by default"
+                    # NEW PT2: details for single SNP if it was only SNP in the group kept SNP after LD:
+                    snp_details_after_ld[snp] = {
+                        "pruned": False,
+                        "reason": "",
+                        "threshold": self.threshold,
+                        "genomic_distance": self.genomic_distance,
+                        "anchor_snp": "Only SNP in group after LD pruning"
+                    }
 
                     continue
                 
@@ -2471,8 +2500,18 @@ class LDSelectorClassification(ScikitNode, TransformerMixin):
                 if len(snps_remaining_for_ca) < 2:
                     final_group_snps.extend(snps_remaining_for_ca)
                     final_selected_snps.extend(final_group_snps)
+                    # NEW PT2: commenting below out
+                    # for s in snps_remaining_for_ca:
+                    #     snp_details_after_ld[s] = "Retained by CA due to lack of more SNPs"
+                    # NEW PT2: update snp_details_after_ld to make sure SNPs still in for CA have these details:
                     for s in snps_remaining_for_ca:
-                        snp_details_after_ld[s] = "Retained by CA due to lack of more SNPs"
+                        snp_details_after_ld[s] = {
+                            "pruned": False,
+                            "reason": "",
+                            "threshold": self.threshold,
+                            "genomic_distance": self.genomic_distance,
+                            "anchor_snp": "Only SNP in group after LD pruning"
+                        }
                     # move to next group
                     continue
                     
@@ -2526,13 +2565,40 @@ class LDSelectorClassification(ScikitNode, TransformerMixin):
                     rejected, _, _, _ = multipletests(p_values, alpha=0.05, method='fdr_bh')
 
                 to_remove = {s for s, r in zip(tested_snps, rejected) if not r} # if rejected is False, then we remove the SNP
+                # NEW PT2: update the snp_details_after_ld for the SNPs that are to be removed post Wald test
+                for snp in to_remove:
+                    snp_details_after_ld[snp] = {
+                        "pruned": True,
+                        "reason": "CA",
+                        "threshold": self.threshold,
+                        "genomic_distance": self.genomic_distance,
+                        "anchor_snp": f"chr{peak_snp}"
+                    }
                 for snp in snps_remaining_for_ca:
                     if snp not in to_remove and snp != peak_snp:
                         final_group_snps.append(snp)
-                        snp_details_after_ld[snp] = "Retained by CA"
+                        # NEW PT2: commenting below out
+                        # snp_details_after_ld[snp] = "Retained by CA"
+                        # NEW PT2: details for SNPs remaining after CA that are not peak SNPs
+                        snp_details_after_ld[snp] = {
+                            "pruned": False,
+                            "reason": "",
+                            "threshold": self.threshold,
+                            "genomic_distance": self.genomic_distance,
+                            "anchor_snp": ""
+                        }
                 # Add the peak SNP to the final group regardless of other SNPs
                 final_group_snps.append(peak_snp)
-                snp_details_after_ld[peak_snp] = "Peak SNP retained by CA"
+                # NEW PT2: commenting below out
+                # snp_details_after_ld[peak_snp] = "Peak SNP retained by CA"
+                # NEW PT2: updating SNP details for peak SNP in the group:
+                snp_details_after_ld[peak_snp] = {
+                    "pruned": False,
+                    "reason": "",
+                    "threshold": self.threshold,
+                    "genomic_distance": self.genomic_distance,
+                    "anchor_snp": ""
+                }
                 
                 final_selected_snps.extend(final_group_snps) # final SNPs after LD pruning and CA added to the list
 
@@ -2541,7 +2607,9 @@ class LDSelectorClassification(ScikitNode, TransformerMixin):
         self.ld_removed_snps = ld_removed_snps
         self.ld_removed_details = ld_removed_details
         self.bool_mask = genotype_df_original.columns.isin(self.final_selected_snps)
-        self.snp_details_after_ld = {snp: snp not in self.final_selected_snps for snp in genotype_df_original.columns}
+        # self.snp_details_after_ld = {snp: snp not in self.final_selected_snps for snp in genotype_df_original.columns}
+        # NEW PT2: setting self.snp_details_after_ld to just snp_details_after_ld dictionary:
+        self.snp_details_after_ld = snp_details_after_ld
         self.selected_features_ = np.array(self.final_selected_snps)
         return self
 
