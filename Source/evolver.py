@@ -337,7 +337,9 @@ def ray_eval_pipeline_classification(x_train,
         x_train_transformed_df = pd.DataFrame(x_train_transformed_df[selected_features_after_ld], columns=selected_features_after_ld)
         if x_train_transformed_df.empty:
             print("No features selected after LD node")
-            return r2_t(-1.0), feature_cnt_t(0), pop_id, False, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], [] # all SNPs in the pipeline were pruned out by LD, should not be happening but just a check
+            # return r2_t(-1.0), feature_cnt_t(0), pop_id, False, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], [] # all SNPs in the pipeline were pruned out by LD, should not be happening but just a check
+            # NEW PT2: ld_node.snp_details_after_ld; and removing False?
+            return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, []
         x_val_transformed_df = pd.DataFrame(x_val_transformed_df[selected_features_after_ld], columns=selected_features_after_ld)
     except Exception as e:
         logging.error(f"Exception while fitting LD node: {e}")
