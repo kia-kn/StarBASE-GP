@@ -432,7 +432,7 @@ def ray_eval_pipeline_classification(x_train,
         logging.error(f"Exception while fitting SNP union step: {e}")
         # return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
         # NEW PT2: return dict
-        status_message = "N/A"
+        status_message = "N/A line 435"
         return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, [], status_message
 
     # use the transform function get the best lo encoded snps for both training and testing dataset
@@ -444,7 +444,7 @@ def ray_eval_pipeline_classification(x_train,
     if x_train_transformed_df.empty:
         # return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
         # NEW PT2: return dict
-        status_message = "N/A"
+        status_message = "N/A line 447"
         return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, [], status_message
 
     x_train_original_df = pd.DataFrame(x_train, columns=uni_node_names)
@@ -466,7 +466,8 @@ def ray_eval_pipeline_classification(x_train,
         logging.error(f"Exception while fitting LD node: {e}")
         # return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
         # NEW PT2: return dict
-        return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, []
+        status_message = "N/A line 469"
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, [], status_message
 
     # adding the selector and regressor nodes
     try:
