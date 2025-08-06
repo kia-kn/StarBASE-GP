@@ -834,6 +834,8 @@ class LogisticRegressionNode(ScikitNode, ClassifierMixin):
         X_ = sm.add_constant(X, has_constant='add')
         self.classifier = sm.GLM(y, X_, family=sm.families.Binomial())
         self.results = self.classifier.fit()
+        # NEW PT2: needed for sklearn perm_importance to identify custom func as a classifier
+        self.classes_ = np.array([0, 1])
         return self
 
     def predict(self, X):
