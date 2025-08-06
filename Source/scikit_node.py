@@ -865,6 +865,24 @@ class LogisticRegressionNode(ScikitNode, ClassifierMixin):
     def mutate(self, rng_: rng_t):
         pass
 
+# NEW PT2: will try to wrap LogisticRegressionNode into a sklearn wrapper so permutation_importance recognizes it as a classifier
+class SklearnWrapper(BaseEstimator, ClassifierMixin):
+    def __init__(self, model):
+        self.model = model
+
+    def fit(self, X, y):
+        return self.model.fit(X, y)
+
+    def predict(self, X):
+        return self.model.predict(X)
+
+    def predict_proba(self, X):
+        return self.model.predict_proba(X)
+
+    @property
+    def classes_(self):
+        return self.model.classes_
+
 # ElasticNet regression
 class ElasticNetNode(ScikitNode, RegressorMixin):
     def __init__(self,

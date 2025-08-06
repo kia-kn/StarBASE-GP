@@ -23,7 +23,7 @@ from sklearn.metrics import r2_score, make_scorer
 from .uni_node import UniNode
 from .uni_node import UniAdditiveNode, UniDominantNode, UniRecessiveNode, UniHeterosisNode, UniUnderDominantNode, UniOverDominantNode, UniSubAdditiveNode, UniSuperAdditiveNode, UniPAGERNode
 
-from .scikit_node import ScikitNode, LDSelector, LDSelectorClassification, LogisticRegressionNode
+from .scikit_node import ScikitNode, LDSelector, LDSelectorClassification, LogisticRegressionNode, SklearnWrapper
 from sklearn.pipeline import Pipeline as SklearnPipeline
 from sklearn.pipeline import FeatureUnion
 from sklearn.linear_model import LinearRegression, LogisticRegression
@@ -1526,6 +1526,9 @@ class EA:
                 # tjur_scorer = make_scorer(_tjur_r2_func, needs_proba=True)
                 # NEW FOR SKLEARN 1.6 -> use response_method="predict_proba" instead of needs_proba=True
                 tjur_scorer = make_scorer(_tjur_r2_func, response_method="predict_proba")
+
+                # NEW PT2: wrap in sklearnwrapper so sklearn can recognize LogisticRegressionNode as a classifier
+                fitted_model = SklearnWrapper(fitted_model)
 
                 perm_imp = permutation_importance(fitted_model, uni_features_test, self.y_val, n_repeats=100, random_state=random_state, n_jobs=-1, scoring=tjur_scorer)
 
