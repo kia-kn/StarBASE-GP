@@ -280,6 +280,124 @@ def ray_eval_pipeline(x_train,
     # return the pipeline
     return r2_t(r2_score), feature_cnt_t(feature_count), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], features_final
 
+# @ray.remote
+# # all univariate snps/nodes with their best lo goes to the LD operator, then the feature selector and finally the classifier
+# # NEW: added LDSelectorClassification instead of LDSelector
+# # NEW PT2: instead of "Tuple[np.float32, np.uint16, np.int16, List[np.str_], List[np.str_]]", returns "Tuple[np.float32, np.uint16, np.int16, Dict[np.str_, Dict], List[np.str_]]"
+# def ray_eval_pipeline_classification(x_train,
+#                       y_train,
+#                       x_val,
+#                       y_val,
+#                       uni_nodes: uni_node_list_t,
+#                       selector_node: ScikitNode,
+#                       ld_node: LDSelectorClassification,
+#                       root_node: ScikitNode,
+#                       pop_id: np.int16,        #    r2, feature count, pop_id, details after ld node, snp_name_after_ld
+#                       snp_r2_set: Set) -> Tuple[np.float32, np.uint16, np.int16, Dict[np.str_, Dict], List[np.str_]]:
+
+#     # make dictionary to hold the snp r2 scores
+#     snp_r2_dict = {p[0]: p[1] for p in snp_r2_set}
+
+#     # create the pipeline to combine all the univariate snps
+#     steps = []
+#     # uni nodes into one sklearn union
+#     steps.append(('snp_union', FeatureUnion([(uni_node.name, uni_node) for uni_node in uni_nodes])))
+#     # make a list of uni node names
+#     uni_node_names = [uni_node.get_snp_name() for uni_node in uni_nodes]
+
+#     # create and fit the pipeline to get the union of all the univariate snps
+#     pipeline = SklearnPipeline(steps=steps)
+#     try:
+#         pipeline_fitted = pipeline.fit(x_train, y_train)
+#     except Exception as e:
+#         # Catch all other exceptions and log error with relevant context
+#         logging.error(f"Exception while fitting SNP union step: {e}")
+#         # return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
+#         # NEW PT2: return dict
+#         return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, []
+
+#     # use the transform function get the best lo encoded snps for both training and testing dataset
+#     x_train_transformed = pipeline_fitted.transform(x_train)
+#     x_val_transformed = pipeline_fitted.transform(x_val)
+#     # create dataframes to hold the transformed data
+#     x_train_transformed_df = pd.DataFrame(x_train_transformed, columns=uni_node_names)
+#     x_val_transformed_df = pd.DataFrame(x_val_transformed, columns=uni_node_names)
+#     if x_train_transformed_df.empty:
+#         # return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
+#         # NEW PT2: return dict
+#         return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, []
+
+#     x_train_original_df = pd.DataFrame(x_train, columns=uni_node_names)
+
+#     # fit the LD node - send the unencoded snps for pearson's correlation calculation, the encoded data, the target and the snp r2 dictionary having the best lo r2
+#     try:
+#         ld_node.fit(x_train_original_df, x_train_transformed_df, y_train, snp_r2_dict)
+#         selected_features_after_ld = ld_node.selected_features_
+#         # keeping only the selected features (not pruned out by LD) after the LD node
+#         x_train_transformed_df = pd.DataFrame(x_train_transformed_df[selected_features_after_ld], columns=selected_features_after_ld)
+#         if x_train_transformed_df.empty:
+#             print("No features selected after LD node")
+#             # return r2_t(-1.0), feature_cnt_t(0), pop_id, False, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], [] # all SNPs in the pipeline were pruned out by LD, should not be happening but just a check
+#             # NEW PT2: ld_node.snp_details_after_ld; and removing False?
+#             logging.warning(f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 342: {type(ld_node.snp_details_after_ld)}")
+#             return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, []
+#         x_val_transformed_df = pd.DataFrame(x_val_transformed_df[selected_features_after_ld], columns=selected_features_after_ld)
+#     except Exception as e:
+#         logging.error(f"Exception while fitting LD node: {e}")
+#         # return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
+#         # NEW PT2: return dict
+#         return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, []
+
+#     # adding the selector and regressor nodes
+#     try:
+#         # create the pipeline
+#         steps = []
+#         # add the selector node
+#         steps.append(('selector', selector_node))
+#         # pass to regressor
+#         # steps.append(('classifier', root_node.classifier))
+#         # NEW: after changing to statsmodels, alter this step in Pipeline:
+#         steps.append(('classifier', root_node))
+#         # create the pipeline without refitting the regressor
+#         pipeline = SklearnPipeline(steps=steps)
+#         pipeline.fit(x_train_transformed_df, y_train)
+#     except Exception as e:
+#         logging.error(f"Exception while fitting pipeline after LD: {e}")
+#         # return r2_t(-1.0), feature_cnt_t(0), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], [] # pipeline fails but still update the hub with LD node results
+#         # NEW PT2:
+#         logging.warning(f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 368: {type(ld_node.snp_details_after_ld)}")
+#         return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, []
+
+#     try:
+#         # r2_score = pipeline.score(x_val_transformed_df, y_val)
+#         # NEW: Tjur R2
+#         def tjur_r2(estimator, X, y): 
+#             proba_pos = estimator.predict_proba(X)[:, 1] 
+#             y = np.asarray(y) 
+#             return proba_pos[y == 1].mean() - proba_pos[y == 0].mean()
+    
+#         # r2_score = tjur_r2(skl_pipeline_fitted, x_val, y_val)
+#         r2_score = tjur_r2(pipeline, x_val_transformed_df, y_val)
+
+#         feature_count = pipeline.named_steps['selector'].get_feature_count() # number of selected features after the selector node
+#         features_final = (pipeline.named_steps['selector'].get_feature_names(selected_features_after_ld)) # get the names of the features after the selector node by sending the selected features after the LD node
+#         # if features_final is not a list, convert it to a list
+#         if not isinstance(features_final, list):
+#             features_final = features_final.tolist()
+#     except Exception as e:
+#         logging.error(f"Error while scoring or getting feature count: {e}")
+#         # return r2_t(-1.0), feature_cnt_t(0), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], []
+#         # NEW PT2:
+#         logging.warning(f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 391: {type(ld_node.snp_details_after_ld)}")
+#         return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, []
+
+#     # return the pipeline
+#     # return r2_t(r2_score), feature_cnt_t(feature_count), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], features_final
+#     # NEW PT2:
+#     logging.warning(f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 397: {type(ld_node.snp_details_after_ld)}")
+#     return r2_t(r2_score), feature_cnt_t(feature_count), pop_id, ld_node.snp_details_after_ld, features_final
+
+# DEBUG VERSION
 @ray.remote
 # all univariate snps/nodes with their best lo goes to the LD operator, then the feature selector and finally the classifier
 # NEW: added LDSelectorClassification instead of LDSelector
@@ -293,7 +411,7 @@ def ray_eval_pipeline_classification(x_train,
                       ld_node: LDSelectorClassification,
                       root_node: ScikitNode,
                       pop_id: np.int16,        #    r2, feature count, pop_id, details after ld node, snp_name_after_ld
-                      snp_r2_set: Set) -> Tuple[np.float32, np.uint16, np.int16, Dict[np.str_, Dict], List[np.str_]]:
+                      snp_r2_set: Set) -> Tuple[np.float32, np.uint16, np.int16, Dict[np.str_, Dict], List[np.str_], str]:
 
     # make dictionary to hold the snp r2 scores
     snp_r2_dict = {p[0]: p[1] for p in snp_r2_set}
@@ -314,7 +432,8 @@ def ray_eval_pipeline_classification(x_train,
         logging.error(f"Exception while fitting SNP union step: {e}")
         # return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
         # NEW PT2: return dict
-        return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, []
+        status_message = "N/A"
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, [], status_message
 
     # use the transform function get the best lo encoded snps for both training and testing dataset
     x_train_transformed = pipeline_fitted.transform(x_train)
@@ -325,7 +444,8 @@ def ray_eval_pipeline_classification(x_train,
     if x_train_transformed_df.empty:
         # return r2_t(-1.0), feature_cnt_t(0), pop_id, (), []
         # NEW PT2: return dict
-        return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, []
+        status_message = "N/A"
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, {}, [], status_message
 
     x_train_original_df = pd.DataFrame(x_train, columns=uni_node_names)
 
@@ -339,8 +459,8 @@ def ray_eval_pipeline_classification(x_train,
             print("No features selected after LD node")
             # return r2_t(-1.0), feature_cnt_t(0), pop_id, False, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], [] # all SNPs in the pipeline were pruned out by LD, should not be happening but just a check
             # NEW PT2: ld_node.snp_details_after_ld; and removing False?
-            logging.warning(f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 342: {type(ld_node.snp_details_after_ld)}")
-            return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, []
+            status_message = f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 462: {type(ld_node.snp_details_after_ld)}"
+            return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, [], status_message
         x_val_transformed_df = pd.DataFrame(x_val_transformed_df[selected_features_after_ld], columns=selected_features_after_ld)
     except Exception as e:
         logging.error(f"Exception while fitting LD node: {e}")
@@ -365,8 +485,8 @@ def ray_eval_pipeline_classification(x_train,
         logging.error(f"Exception while fitting pipeline after LD: {e}")
         # return r2_t(-1.0), feature_cnt_t(0), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], [] # pipeline fails but still update the hub with LD node results
         # NEW PT2:
-        logging.warning(f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 368: {type(ld_node.snp_details_after_ld)}")
-        return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, []
+        status_message = f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 488: {type(ld_node.snp_details_after_ld)}"
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, [], status_message
 
     try:
         # r2_score = pipeline.score(x_val_transformed_df, y_val)
@@ -388,14 +508,14 @@ def ray_eval_pipeline_classification(x_train,
         logging.error(f"Error while scoring or getting feature count: {e}")
         # return r2_t(-1.0), feature_cnt_t(0), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], []
         # NEW PT2:
-        logging.warning(f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 391: {type(ld_node.snp_details_after_ld)}")
-        return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, []
+        status_message = f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 511: {type(ld_node.snp_details_after_ld)}"
+        return r2_t(-1.0), feature_cnt_t(0), pop_id, ld_node.snp_details_after_ld, [], status_message
 
     # return the pipeline
     # return r2_t(r2_score), feature_cnt_t(feature_count), pop_id, [snp_name_t(k) for k,v in ld_node.snp_details_after_ld.items() if v == True], features_final
     # NEW PT2:
-    logging.warning(f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 397: {type(ld_node.snp_details_after_ld)}")
-    return r2_t(r2_score), feature_cnt_t(feature_count), pop_id, ld_node.snp_details_after_ld, features_final
+    status_message = f"[ray_eval_pipeline_classification] Type of snp_details_after_ld on line 517: {type(ld_node.snp_details_after_ld)}"
+    return r2_t(r2_score), feature_cnt_t(feature_count), pop_id, ld_node.snp_details_after_ld, features_final, status_message
 
 @typechecked # for debugging purposes
 class EA:
@@ -1181,8 +1301,12 @@ class EA:
             finished, ray_jobs = ray.wait(ray_jobs)
             # r2, feature_count, pop_id, pruned, feature_names = ray.get(finished)[0]
             # NEW PT2:
-            r2, feature_count, pop_id, snp_details_after_ld, feature_names = ray.get(finished)[0]
+            # r2, feature_count, pop_id, snp_details_after_ld, feature_names = ray.get(finished)[0]
+            # DEBUG VERSION OF ABOVE:
+            r2, feature_count, pop_id, snp_details_after_ld, feature_names, status_message = ray.get(finished)[0]
+            print(status_message, flush=True)
             print("Type of snp_details_after_ld on line 1185 before return:", type(snp_details_after_ld), flush=True)
+            # END DEBUG
             # update the pipeline
             pop[pop_id].set_traits([r2, feature_count, set(np.str_(s) for s in feature_names)])
 
