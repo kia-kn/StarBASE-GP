@@ -722,7 +722,7 @@ class EA:
 
         # print the data after changing the encoding
         print("Genotype data: ", all_x, flush=True)
-        print(all_y, flush=True)
+        print("Y column: ", all_y, flush=True)
 
         # partition data based splits
         # Add stratify for classification?
