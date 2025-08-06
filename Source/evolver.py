@@ -138,6 +138,9 @@ def ray_uni_eval_classification(x_train,
     best_uni = ''
     best_res = -1.0
 
+    # NEW PT2: rng for LogisticRegressionNode
+    rng = np.random.default_rng(rng_)
+
     # holds all lo's we are going to evaluate
     # NEW: commented out UniPAGERNode for classification
     unis = {np.str_('additive'): UniAdditiveNode,
@@ -162,7 +165,7 @@ def ray_uni_eval_classification(x_train,
         # change to statsmodels, regressor name to classifier
         # steps.append(('regressor', LogisticRegression()))
         # NEW: use the LogisticRegressionNode from scikit_node.py
-        steps.append(('regressor', LogisticRegressionNode(rng=1)))
+        steps.append(('regressor', LogisticRegressionNode(rng_=rng)))
 
         # create the pipeline
         skl_pipeline = SklearnPipeline(steps=steps)
