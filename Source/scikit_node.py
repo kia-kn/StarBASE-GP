@@ -841,10 +841,15 @@ class LogisticRegressionNode(ScikitNode, ClassifierMixin):
     def predict(self, X):
         X_ = sm.add_constant(X, has_constant='add')
         # Return predicted probabilities (values between 0 and 1)
-        return self.results.predict(X_)
+        # return self.results.predict(X_)
+        # NEW PT2: refactoring predict to return hard labels instead of probabilities
+        probs = self.results.predict(X_)
+        return (probs >= 0.5).astype(int)  # This returns class labels
     
     def predict_proba(self, X):
-        probs = self.predict(X)
+        # probs = self.predict(X)
+        # NEW PT2: refactoring predict_proba to work with new predict()
+        probs = self.results.predict(sm.add_constant(X, has_constant='add'))
         return np.vstack([1 - probs, probs]).T
 
     # def predict_class(self, X, threshold=0.5):
