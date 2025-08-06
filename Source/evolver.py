@@ -1261,6 +1261,8 @@ class EA:
             Set of unseen interactions to evaluate.
         """
 
+        # DEBUG:
+        print(self.problem_type, flush=True)
         # collect all parallel jobs
         ray_jobs = []
         # go through each pipeline in the population and evaluate
