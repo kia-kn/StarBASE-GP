@@ -592,8 +592,8 @@ class EA:
 
         # NEW: when user uploads dataset, see if its target is classification or continuous
         if pd.api.types.is_numeric_dtype(all_y):
-            unique_vals = np.unique(all_y)
-            if len(unique_vals) <= 3 and all_y.dtype in [np.int32, np.int64, np.uint8]:
+            unique_vals_y = np.unique(all_y)
+            if len(unique_vals_y) <= 3 and all_y.dtype in [np.int32, np.int64, np.uint8]:
                 # Small set of unique discrete integers — probably classification
                 self.problem_type = "classification"
             else:
