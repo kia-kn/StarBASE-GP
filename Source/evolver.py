@@ -1525,10 +1525,10 @@ class EA:
                 # 'needs_proba' parameter only present in sklearn version 1.3 - did not work with sklearn 1.6.0
                 # tjur_scorer = make_scorer(_tjur_r2_func, needs_proba=True)
                 # NEW FOR SKLEARN 1.6 -> use response_method="predict_proba" instead of needs_proba=True
-                tjur_scorer = make_scorer(_tjur_r2_func, response_method="predict_proba")
+                # NEW PT2: replacing "predict_proba" w/ "predict" bc permutation_importance not recognizing it as a classifier
+                # tjur_scorer = make_scorer(_tjur_r2_func, response_method="predict_proba")
+                tjur_scorer = make_scorer(_tjur_r2_func, response_method="predict")
 
-                # NEW PT2: wrap in sklearnwrapper so sklearn can recognize LogisticRegressionNode as a classifier
-                fitted_model = SklearnWrapper(fitted_model)
 
                 perm_imp = permutation_importance(fitted_model, uni_features_test, self.y_val, n_repeats=100, random_state=random_state, n_jobs=-1, scoring=tjur_scorer)
 
