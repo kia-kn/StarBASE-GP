@@ -180,9 +180,9 @@ def ray_uni_eval_classification(x_train,
             y = np.asarray(y) 
             return proba_pos[y == 1].mean() - proba_pos[y == 0].mean()
         
-        # r2 = tjur_r2(skl_pipeline_fitted, x_val, y_val)
+        r2 = tjur_r2(skl_pipeline_fitted, x_val, y_val)
         # NEW: select encoder based on training R2, not validation R2
-        r2 = tjur_r2(skl_pipeline_fitted, x_train, y_train)
+        # r2 = tjur_r2(skl_pipeline_fitted, x_train, y_train)
 
         # # *** just for debugging
         # if r2 > 0.0001:
@@ -1528,7 +1528,6 @@ class EA:
                 # NEW PT2: replacing "predict_proba" w/ "predict" bc permutation_importance not recognizing it as a classifier
                 # tjur_scorer = make_scorer(_tjur_r2_func, response_method="predict_proba")
                 tjur_scorer = make_scorer(_tjur_r2_func, response_method="predict")
-
 
                 perm_imp = permutation_importance(fitted_model, uni_features_test, self.y_val, n_repeats=100, random_state=random_state, n_jobs=-1, scoring=tjur_scorer)
 
